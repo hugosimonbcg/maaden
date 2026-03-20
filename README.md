@@ -36,3 +36,4 @@ Use a normal browser tab at `http://localhost:5173/cost` (or the URL printed by 
 ---
 
 *Illustrative only — data is synthetic and not Maaden confidential information.*
+# maaden
