@@ -16,6 +16,27 @@ npm run build   # production build
 npm run preview # serve dist
 ```
 
+### Vercel: HTTP Basic Auth (optional)
+
+Root **`middleware.ts`** enforces [HTTP Basic Auth](https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication) on Vercel using **Edge Middleware** (credentials never ship in the browser bundle).
+
+| Variable | Description |
+| --- | --- |
+| `BASIC_AUTH_USER` | Username |
+| `BASIC_AUTH_PASS` | Password |
+
+- Set both in **Vercel → Settings → Environment Variables** for Production (and Preview if needed). **Do not** add a `VITE_` prefix — these are read only on the edge.
+- If **either** variable is missing or empty, middleware **does not** challenge (open site). Set both to enable protection.
+- After changing env vars, **redeploy**.
+
+`npm run dev` does **not** run Vercel middleware. To test auth locally, use [`vercel dev`](https://vercel.com/docs/cli/dev) with the same variables in `.env` / linked project.
+
+### Vercel: other environment variables
+
+For values the **React app** must read in the browser, use the **`VITE_`** prefix (for example `VITE_PUBLIC_API_URL`); Vite inlines them at **build** time. Never put real secrets in `VITE_*` — they appear in client JavaScript.
+
+Copy `.env.example` to `.env` for local dev; Vite loads `.env` automatically.
+
 ## Design decisions (6)
 
 1. **SOW-aligned lineage** — Metrics and AI responses reference the five performance dimensions (assets, operations, cost & capital, marketing & mix, organisation & enablers) even though the UI groups them into four executive outcome routes.
