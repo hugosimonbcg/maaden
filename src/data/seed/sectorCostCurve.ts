@@ -18,6 +18,8 @@ export interface SectorCostCurveSegment {
   region: SectorRegion
   capacityMt: number
   c1UsdPerTon: number
+  /** Portfolio C1 when chart position is capped for scale (Maaden only). */
+  c1UsdPerTonReported?: number
   cumStartMt: number
   isMaaden: boolean
   assetId?: string
@@ -30,11 +32,12 @@ const regionStyle: Record<
   Exclude<SectorRegion, 'maaden'>,
   { fill: string; stroke: string }
 > = {
-  cis: { fill: 'rgba(30, 58, 95, 0.9)', stroke: '#152a45' },
-  china: { fill: 'rgba(180, 83, 9, 0.88)', stroke: '#78350f' },
-  americas: { fill: 'rgba(37, 99, 235, 0.82)', stroke: '#1e40af' },
-  mena: { fill: 'rgba(59, 130, 106, 0.45)', stroke: '#2d6a66' },
-  row: { fill: 'rgba(82, 82, 91, 0.78)', stroke: '#3f3f46' },
+  /* Reference-style merit order: CIS rust, China orange, Americas blue, ROW mint, MENA sand */
+  cis: { fill: 'rgba(168, 90, 72, 0.92)', stroke: '#7c3d32' },
+  china: { fill: 'rgba(234, 120, 12, 0.9)', stroke: '#9a3412' },
+  americas: { fill: 'rgba(59, 130, 246, 0.88)', stroke: '#1d4ed8' },
+  mena: { fill: 'rgba(202, 168, 120, 0.82)', stroke: '#8b7355' },
+  row: { fill: 'rgba(134, 220, 165, 0.9)', stroke: '#3f6f4a' },
 }
 
 const maadenStyle = {
@@ -53,25 +56,36 @@ type Seed = {
   c1Ref: number
 }
 
-/** Phosphate / acid / DAP value chain — illustrative global capacity (Mt product equiv.) */
+/**
+ * Phosphate merit-order curve — ~10 competitor bars; high-cost tail collapsed so Maaden wedges stay visible
+ * on the right. ~731 Mt competitor capacity (+ Maaden).
+ */
 const phosphateSeeds: Seed[] = [
-  { id: 'p_cis', label: 'FSU — integrated', fullName: 'FSU — integrated mine-to-acid', region: 'cis', capacityMt: 3.8, c1Ref: 74 },
-  { id: 'p_cn_i', label: 'China — integ.', fullName: 'China — large integrated', region: 'china', capacityMt: 8.6, c1Ref: 84 },
-  { id: 'p_ocp', label: 'Morocco — OCP', fullName: 'Morocco — OCP integrated', region: 'mena', capacityMt: 12.4, c1Ref: 79 },
-  { id: 'p_us_i', label: 'US — integrated', fullName: 'US — integrated producers', region: 'americas', capacityMt: 4.2, c1Ref: 91 },
-  { id: 'p_sa', label: 'Saudi — other', fullName: 'KSA — other phosphate complexes', region: 'mena', capacityMt: 2.1, c1Ref: 88 },
-  { id: 'p_in_pr', label: 'India — rock', fullName: 'India — phosphate rock route', region: 'row', capacityMt: 3.4, c1Ref: 96 },
-  { id: 'p_jor', label: 'Jordan — JPMC', fullName: 'Jordan — JPMC / Arab Potash linked', region: 'mena', capacityMt: 1.9, c1Ref: 92 },
-  { id: 'p_tun', label: 'Tunisia', fullName: 'Tunisia — GCT', region: 'mena', capacityMt: 1.2, c1Ref: 99 },
-  { id: 'p_cn_ni', label: 'China — non-int.', fullName: 'China — non-integrated', region: 'china', capacityMt: 6.5, c1Ref: 108 },
-  { id: 'p_in_pa', label: 'India — acid', fullName: 'India — merchant acid route', region: 'row', capacityMt: 2.8, c1Ref: 112 },
-  { id: 'p_eg', label: 'Egypt', fullName: 'Egypt — phosphoric acid', region: 'mena', capacityMt: 1.6, c1Ref: 104 },
-  { id: 'p_br', label: 'Brazil', fullName: 'Brazil — import acid + granulation', region: 'americas', capacityMt: 2.4, c1Ref: 118 },
-  { id: 'p_mos', label: 'Mosaic — Florida', fullName: 'Mosaic — Florida integrated', region: 'americas', capacityMt: 3.1, c1Ref: 95 },
-  { id: 'p_nut', label: 'Nutrien', fullName: 'Nutrien — North America', region: 'americas', capacityMt: 2.7, c1Ref: 101 },
-  { id: 'p_icl', label: 'ICL', fullName: 'ICL — Dead Sea integrated', region: 'mena', capacityMt: 1.4, c1Ref: 89 },
-  { id: 'p_eu', label: 'EU — import acid', fullName: 'EU — import acid + finishing', region: 'row', capacityMt: 2.2, c1Ref: 124 },
-  { id: 'p_cn_tail', label: 'China — tail', fullName: 'China — high-cost / idled tail', region: 'china', capacityMt: 2.9, c1Ref: 138 },
+  { id: 'p_cis_a', label: 'CIS — integrated', fullName: 'CIS — PhosAgro / EuroChem / FSU integrated', region: 'cis', capacityMt: 100, c1Ref: 28 },
+  { id: 'p_row_a', label: 'ROW — low cost', fullName: 'ROW — large rock & acid (ex-China)', region: 'row', capacityMt: 160, c1Ref: 30 },
+  { id: 'p_mena_a', label: 'MENA — OCP core', fullName: 'Morocco — OCP mine-to-fertilizer', region: 'mena', capacityMt: 75, c1Ref: 32 },
+  { id: 'p_cis_b', label: 'CIS — tier II', fullName: 'CIS — Kazakhstan / secondary FSU', region: 'cis', capacityMt: 55, c1Ref: 34 },
+  { id: 'p_row_b', label: 'ROW — India / SEA', fullName: 'ROW — India & SE Asia rock–acid', region: 'row', capacityMt: 58, c1Ref: 36 },
+  { id: 'p_am_a', label: 'Americas — N.Am.', fullName: 'Americas — Canada / US integrated', region: 'americas', capacityMt: 42, c1Ref: 39 },
+  { id: 'p_cn_a', label: 'China — integrated', fullName: 'China — large integrated complexes', region: 'china', capacityMt: 46, c1Ref: 42 },
+  { id: 'p_mena_b', label: 'MENA — other', fullName: 'MENA — GCC / Jordan / Tunisia', region: 'mena', capacityMt: 35, c1Ref: 45 },
+  { id: 'p_row_c', label: 'ROW — EU / LatAm', fullName: 'ROW — EU finishing & LatAm granulation', region: 'row', capacityMt: 40, c1Ref: 48 },
+  {
+    id: 'p_cn_am_hi',
+    label: 'China / Americas — upper mid',
+    fullName: 'China & Americas — non-int., Brazil, marginal units (aggregated)',
+    region: 'china',
+    capacityMt: 86,
+    c1Ref: 56,
+  },
+  {
+    id: 'p_tail_agg',
+    label: 'ROW / China — high-cost tail',
+    fullName: 'ROW & China — stranded / idled / phase-out (aggregated)',
+    region: 'row',
+    capacityMt: 34,
+    c1Ref: 74,
+  },
 ]
 
 const aluminumSeeds: Seed[] = [
@@ -142,6 +156,10 @@ export function buildSectorCostCurve(
     }
   })
 
+  const extMaxC1 = Math.max(...external.map((e) => e.c1UsdPerTon), 1)
+  /** Keep Maaden on the chart when portfolio C1 is far above the global merit band (hero / scenario). */
+  const maadenCurveCap = Math.min(125, Math.round(extMaxC1 * 1.16 + 8))
+
   const maadenVerticalFilter = (assetId: string) => {
     const a = assets.find((x) => x.id === assetId)
     if (!a) return false
@@ -153,13 +171,16 @@ export function buildSectorCostCurve(
   const maaden: Omit<SectorCostCurveSegment, 'cumStartMt'>[] = maadenRows.map((r) => {
     const a = assets.find((x) => x.id === r.assetId)!
     const cap = Math.round((r.productTonnes / 1e6) * 10) / 10
+    const actual = r.c1UsdPerTon
+    const displayC1 = Math.min(actual, maadenCurveCap)
     return {
       id: `maaden_${r.assetId}`,
       label: a.shortCode,
       fullName: a.name,
       region: 'maaden',
       capacityMt: Math.max(0.15, cap),
-      c1UsdPerTon: r.c1UsdPerTon,
+      c1UsdPerTon: displayC1,
+      c1UsdPerTonReported: displayC1 < actual ? actual : undefined,
       isMaaden: true,
       assetId: r.assetId,
       fill: maadenStyle.fill,

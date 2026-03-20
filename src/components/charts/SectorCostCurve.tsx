@@ -3,6 +3,8 @@ import type { SectorCostCurveModel, SectorCostCurveSegment } from '../../data/se
 import { formatNumber, formatUsdPerTon } from '../../lib/format'
 
 const margin = { top: 14, right: 20, bottom: 44, left: 54 }
+/** Minimum on-screen width (px) for Maaden bars so teal wedges stay visible at ~4 Mt scale. */
+const MIN_MAADEN_BAR_PX = 16
 
 type Props = {
   model: SectorCostCurveModel
@@ -56,11 +58,14 @@ export function SectorCostCurve({
     if (!segments.length) return ''
     const xP = (mt: number) => margin.left + (mt / totalCapacityMt) * iw
     const yP = (cost: number) => margin.top + ih - (cost / maxCost) * ih
-    const pts = segments.map((s) => ({
-      xL: xP(s.cumStartMt),
-      xR: xP(s.cumStartMt + s.capacityMt),
-      yT: yP(s.c1UsdPerTon),
-    }))
+    const pts = segments.map((s) => {
+      const xR = xP(s.cumStartMt + s.capacityMt)
+      const xL = xP(s.cumStartMt)
+      const wN = Math.max(1, xR - xL)
+      const w = s.isMaaden ? Math.max(MIN_MAADEN_BAR_PX, wN) : wN
+      const xLeft = s.isMaaden ? xR - w : xL
+      return { xL: xLeft, xR, yT: yP(s.c1UsdPerTon) }
+    })
     let d = `M ${pts[0].xL} ${pts[0].yT}`
     pts.forEach((b, i) => {
       d += ` L ${b.xR} ${b.yT}`
@@ -173,8 +178,11 @@ export function SectorCostCurve({
 
         <g clipPath={`url(#${gid}-plot)`}>
           {segments.map((s) => {
-            const x = xPx(s.cumStartMt)
-            const w = Math.max(1, xPx(s.cumStartMt + s.capacityMt) - x)
+            const xRight = xPx(s.cumStartMt + s.capacityMt)
+            const xLeftNatural = xPx(s.cumStartMt)
+            const wNatural = Math.max(1, xRight - xLeftNatural)
+            const w = s.isMaaden ? Math.max(MIN_MAADEN_BAR_PX, wNatural) : wNatural
+            const x = s.isMaaden ? xRight - w : xLeftNatural
             const y = yPx(s.c1UsdPerTon)
             const h = margin.top + ih - y
             return (
@@ -251,8 +259,16 @@ export function SectorCostCurve({
         >
           <p className="font-semibold text-ma-ink">{hovered.fullName}</p>
           <p className="mt-1 tabular-nums text-ma-muted">
-            C1 cash cost: <span className="font-medium text-ma-ink">{formatUsdPerTon(hovered.c1UsdPerTon)}</span>
+            C1 cash cost:{' '}
+            <span className="font-medium text-ma-ink">
+              {formatUsdPerTon(hovered.c1UsdPerTonReported ?? hovered.c1UsdPerTon)}
+            </span>
           </p>
+          {hovered.c1UsdPerTonReported != null && hovered.c1UsdPerTonReported !== hovered.c1UsdPerTon && (
+            <p className="mt-0.5 text-[10px] leading-snug text-ma-muted">
+              Merit-order bar height capped at {formatUsdPerTon(hovered.c1UsdPerTon)} for sector scale.
+            </p>
+          )}
           <p className="tabular-nums text-ma-muted">
             Capacity: <span className="font-medium text-ma-ink">{formatNumber(hovered.capacityMt, 1)} Mt</span>
           </p>

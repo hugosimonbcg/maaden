@@ -98,36 +98,36 @@ export function DapMinusWaterfall({ steps = dapMinusSteps }: { steps?: DapMinusS
 
   return (
     <div ref={containerRef} className="w-full">
-      <div className="rounded-sm border border-white/10 bg-[#141618] px-3 pb-2 pt-4 shadow-inner">
+      <div className="rounded-sm border border-ma-line bg-ma-elevated px-3 pb-2 pt-4 shadow-[inset_0_1px_0_rgba(15,18,16,0.04)]">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3 px-1">
-          <div className="flex flex-wrap gap-4 text-[10px] font-semibold uppercase tracking-wide text-white/75">
+          <div className="flex flex-wrap gap-4 text-[10px] font-semibold uppercase tracking-wide text-ma-muted">
             <span className="flex items-center gap-2">
-              <span className="h-2.5 w-2.5 shrink-0 border border-white/20" style={{ background: COLORS.anchor }} />
+              <span className="h-2.5 w-2.5 shrink-0 border border-ma-line" style={{ background: COLORS.anchor }} />
               Price / margin
             </span>
             <span className="flex items-center gap-2">
-              <span className="h-2.5 w-2.5 shrink-0 border border-white/20" style={{ background: COLORS.processing }} />
+              <span className="h-2.5 w-2.5 shrink-0 border border-ma-line" style={{ background: COLORS.processing }} />
               Processing
             </span>
             <span className="flex items-center gap-2">
-              <span className="h-2.5 w-2.5 shrink-0 border border-white/20" style={{ background: COLORS.input }} />
+              <span className="h-2.5 w-2.5 shrink-0 border border-ma-line" style={{ background: COLORS.input }} />
               Input costs
             </span>
           </div>
         </div>
 
-        <p className="mb-2 px-1 text-center text-[11px] italic text-[color:var(--ma-gold)]">
+        <p className="mb-2 px-1 text-center text-[11px] italic text-ma-gold-dim">
           Margin anchored downstream; upstream economics are derivative
         </p>
 
-        <svg width={width} height={height} className="max-w-full" role="img" aria-label="DAP minus cost waterfall">
+        <svg width={width} height={height} className="max-w-full text-ma-ink" role="img" aria-label="DAP minus cost waterfall">
           <title>DAP minus approach — indicative phosphate cost structure</title>
           <defs>
             <pattern id={`${gid}-grid`} width="8" height="8" patternUnits="userSpaceOnUse">
-              <path d="M 8 0 L 0 0 0 8" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
+              <path d="M 8 0 L 0 0 0 8" fill="none" stroke="var(--ma-line)" strokeWidth="1" opacity={0.6} />
             </pattern>
           </defs>
-          <rect x={margin.left} y={margin.top} width={iw} height={ih} fill={`url(#${gid}-grid)`} opacity={0.5} />
+          <rect x={margin.left} y={margin.top} width={iw} height={ih} fill={`url(#${gid}-grid)`} opacity={0.45} />
 
           {yTicks.map((t) => {
             const y = yPx(t)
@@ -138,10 +138,11 @@ export function DapMinusWaterfall({ steps = dapMinusSteps }: { steps?: DapMinusS
                   x2={margin.left + iw}
                   y1={y}
                   y2={y}
-                  stroke="rgba(255,255,255,0.08)"
+                  stroke="var(--ma-line)"
                   strokeDasharray="4 4"
+                  strokeOpacity={0.9}
                 />
-                <text x={margin.left - 8} y={y + 4} textAnchor="end" className="fill-white/45 text-[10px] tabular-nums">
+                <text x={margin.left - 8} y={y + 4} textAnchor="end" className="fill-ma-muted text-[10px] tabular-nums">
                   {t}
                 </text>
               </g>
@@ -152,7 +153,7 @@ export function DapMinusWaterfall({ steps = dapMinusSteps }: { steps?: DapMinusS
             x={14}
             y={margin.top + ih / 2}
             transform={`rotate(-90 14 ${margin.top + ih / 2})`}
-            className="fill-white/50 text-[10px] font-semibold uppercase tracking-[0.12em]"
+            className="fill-ma-muted text-[10px] font-semibold uppercase tracking-[0.12em]"
           >
             DAP minus approach
           </text>
@@ -164,7 +165,8 @@ export function DapMinusWaterfall({ steps = dapMinusSteps }: { steps?: DapMinusS
               x2={c.x2}
               y1={c.y}
               y2={c.y}
-              stroke="rgba(255,255,255,0.35)"
+              stroke="var(--ma-muted)"
+              strokeOpacity={0.45}
               strokeWidth={1}
               strokeDasharray="3 2"
             />
@@ -188,12 +190,12 @@ export function DapMinusWaterfall({ steps = dapMinusSteps }: { steps?: DapMinusS
                   x={b.x + b.w / 2}
                   y={b.yTop - 6}
                   textAnchor="middle"
-                  className="fill-white/90 text-[11px] font-semibold tabular-nums"
+                  className="fill-ma-ink text-[11px] font-semibold tabular-nums"
                 >
                   {b.value}
                 </text>
                 <foreignObject x={b.x} y={height - margin.bottom + 4} width={b.w} height={margin.bottom - 8}>
-                  <div className="flex h-full items-start justify-center px-0.5 text-center text-[9px] font-medium leading-snug text-white/55">
+                  <div className="flex h-full items-start justify-center px-0.5 text-center text-[9px] font-medium leading-snug text-ma-muted">
                     {b.label}
                   </div>
                 </foreignObject>
@@ -202,7 +204,7 @@ export function DapMinusWaterfall({ steps = dapMinusSteps }: { steps?: DapMinusS
           })}
         </svg>
 
-        <p className="mt-1 border-t border-white/10 px-2 py-2 text-[10px] leading-relaxed text-white/40">
+        <p className="mt-1 border-t border-ma-line px-2 py-2 text-[10px] leading-relaxed text-ma-muted">
           Indicative phosphate cost structure — all figures in US$/t DAP P₂O₅ equivalent. Illustrative prototype only;
           not Maaden financial statements.
         </p>
