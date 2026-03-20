@@ -1,0 +1,169 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+    --ma-bg: #f4f1ea;
+    --ma-surface: #faf8f4;
+    --ma-elevated: #ffffff;
+    --ma-ink: #0f1210;
+    --ma-muted: #5c5a55;
+    --ma-line: #d9d4ca;
+    --ma-graphite: #2a2d2c;
+    --ma-charcoal: #1a1c1b;
+    --ma-gold: #b8956a;
+    --ma-gold-dim: #8f7354;
+    --ma-teal: #2d6a66;
+    --ma-teal-muted: #3d8580;
+    --ma-amber-warn: #9a6b2d;
+    --ma-risk: #8b3a3a;
+    --ma-nav-bg: #1a1c1b;
+    --ma-nav-border: rgba(255, 255, 255, 0.1);
+    --ma-nav-muted: rgba(255, 255, 255, 0.7);
+    --ma-nav-subtle: rgba(255, 255, 255, 0.5);
+    --ma-nav-faint: rgba(255, 255, 255, 0.4);
+    /* AI chrome — precision / engineered */
+    --ai-panel-bg: #0e0f10;
+    --ai-panel-elevated: #151618;
+    --ai-edge: rgba(255, 255, 255, 0.14);
+    --ai-accent: #3d9e96;
+    --ai-accent-dim: #2d6a66;
+    --ai-orb-ring: rgba(61, 158, 150, 0.85);
+    --ai-text: #e8eae9;
+    --ai-text-muted: rgba(232, 234, 233, 0.55);
+    --ai-scan: rgba(61, 158, 150, 0.25);
+  }
+
+  .dark {
+    color-scheme: dark;
+    --ma-bg: #121411;
+    --ma-surface: #1a1c1a;
+    --ma-elevated: #222423;
+    --ma-ink: #f4f1ea;
+    --ma-muted: #9c9a92;
+    --ma-line: #3d403d;
+    --ma-graphite: #c9c5bc;
+    --ma-charcoal: #0e0f0e;
+    --ma-gold: #c4a86f;
+    --ma-gold-dim: #a68b52;
+    --ma-teal: #4a9e96;
+    --ma-teal-muted: #3d8580;
+    --ma-amber-warn: #c9954d;
+    --ma-risk: #c97a7a;
+    --ma-nav-bg: #0c0d0c;
+    --ma-nav-border: rgba(255, 255, 255, 0.08);
+    --ma-nav-muted: rgba(244, 241, 234, 0.78);
+    --ma-nav-subtle: rgba(244, 241, 234, 0.5);
+    --ma-nav-faint: rgba(244, 241, 234, 0.38);
+    --ai-panel-bg: #0a0b0c;
+    --ai-panel-elevated: #121314;
+    --ai-edge: rgba(255, 255, 255, 0.12);
+    --ai-accent: #4dc4b8;
+    --ai-accent-dim: #3d9e96;
+    --ai-orb-ring: rgba(77, 196, 184, 0.9);
+    --ai-text: #eef0ef;
+    --ai-text-muted: rgba(238, 240, 239, 0.5);
+    --ai-scan: rgba(77, 196, 184, 0.2);
+  }
+
+  html {
+    @apply font-sans;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--ma-bg);
+    color: var(--ma-ink);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+
+  [dir='rtl'] {
+    font-feature-settings: 'kern' 1;
+  }
+}
+
+/* Snappy AI motion */
+@keyframes ai-bar-meter {
+  0%,
+  100% {
+    transform: scaleY(0.4);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes ai-scan-line {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  92% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes ai-cursor-scan {
+  0% {
+    transform: translateX(-4px);
+    opacity: 0;
+  }
+  6% {
+    opacity: 0.75;
+  }
+  94% {
+    opacity: 0.75;
+  }
+  100% {
+    transform: translateX(calc(100% + 4px));
+    opacity: 0;
+  }
+}
+
+.ai-cursor-scan {
+  animation: ai-cursor-scan 3.6s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+@keyframes ai-orb-tick {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ai-orb-spin {
+  animation: ai-orb-tick 2.8s linear infinite;
+}
+
+/* Recharts */
+.recharts-tooltip-wrapper {
+  outline: none;
+}
+
+.recharts-default-tooltip {
+  border-radius: 2px !important;
+  border: 1px solid var(--ma-line) !important;
+  background: var(--ma-elevated) !important;
+  color: var(--ma-ink) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
+}
+
+.dark .recharts-default-tooltip {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45) !important;
+}
+
+.chart-box {
+  @apply min-h-[240px] min-w-0 w-full;
+}
