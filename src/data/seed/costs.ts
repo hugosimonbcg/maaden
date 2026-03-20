@@ -9,7 +9,7 @@ function baseForAsset(assetId: string): {
   q: 1 | 2 | 3 | 4
 } {
   const map: Record<string, { c1: number; oh: number; q: 1 | 2 | 3 | 4 }> = {
-    ph_waad: { c1: 118, oh: 0.14, q: 2 },
+    ph_waad: { c1: 704, oh: 0.14, q: 2 },
     ph_ras: { c1: 102, oh: 0.11, q: 2 },
     al_smelter: { c1: 1840, oh: 0.09, q: 3 },
     al_refining: { c1: 312, oh: 0.1, q: 2 },
