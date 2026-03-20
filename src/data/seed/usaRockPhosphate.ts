@@ -6,6 +6,8 @@ export type UsRockPhosphatePoint = {
   year: number
   production: number
   consumption: number
+  /** Illustrative benchmark price, US$/t — wobbles around ~150 for strategy dialogue. */
+  priceUsdPerTon: number
 }
 
 function wobble(phase: number, year: number): number {
@@ -38,10 +40,17 @@ export const usRockPhosphateSeries: UsRockPhosphatePoint[] = (() => {
       cons = 42 - u * 14 + wobble(8, year) * 1.5 + Math.max(0, u - 0.55) * 12
     }
     if (t < 0.75 && cons > prod - 0.3) cons = Math.min(cons, prod * 0.96 + wobble(9, year) * 0.15)
+    const priceUsd =
+      150 +
+      wobble(10, year) * 12 +
+      wobble(11, year) * 8 +
+      t * 14 +
+      Math.sin(year * 0.55) * 6
     rows.push({
       year,
       production: Math.round(Math.max(0, prod) * 10) / 10,
       consumption: Math.round(Math.max(0, cons) * 10) / 10,
+      priceUsdPerTon: Math.round(Math.max(40, priceUsd) * 10) / 10,
     })
   }
   return rows

@@ -1,6 +1,16 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import type { YearKey } from '../../data/types'
 import type { DapMinusStepDef } from '../../data/seed/dapMinus'
 import { dapMinusSteps } from '../../data/seed/dapMinus'
+
+/** Same lens as cost seed data — scales illustrative DAP-minus dollars vs 2024 baseline. */
+function yearFactor(y: YearKey): number {
+  if (y === 2021) return 0.96
+  if (y === 2023) return 1.02
+  if (y === 2024) return 1.0
+  if (y === 2025) return 0.98
+  return 0.92
+}
 
 const COLORS = {
   anchor: '#5eb8cf',
@@ -22,7 +32,14 @@ type BarGeom = {
   yBot: number
 }
 
-export function DapMinusWaterfall({ steps = dapMinusSteps }: { steps?: DapMinusStepDef[] }) {
+export function DapMinusWaterfall({
+  steps = dapMinusSteps,
+  referenceYear,
+}: {
+  steps?: DapMinusStepDef[]
+  /** When set, scales bridge vs 2024 baseline and labels the view. */
+  referenceYear?: YearKey
+}) {
   const gid = useId()
   const containerRef = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState(900)
@@ -45,14 +62,27 @@ export function DapMinusWaterfall({ steps = dapMinusSteps }: { steps?: DapMinusS
 
   const yPx = (v: number) => margin.top + ih - (v / maxV) * ih
 
+  const scaledSteps = useMemo(() => {
+    const y = referenceYear ?? 2024
+    const yf = yearFactor(y) / yearFactor(2024)
+    const [first, ...rest] = steps
+    const last = rest[rest.length - 1]
+    const middle = rest.slice(0, -1)
+    const firstV = Math.round(first.value * yf)
+    const middleScaled = middle.map((s) => ({ ...s, value: Math.round(s.value * yf) }))
+    const ded = middleScaled.reduce((a, s) => a + s.value, 0)
+    const marginV = Math.max(0, firstV - ded)
+    return [{ ...first, value: firstV }, ...middleScaled, { ...last, value: marginV }]
+  }, [steps, referenceYear])
+
   const { bars, connectors } = useMemo(() => {
-    const n = steps.length
+    const n = scaledSteps.length
     const slotW = iw / n
     const pad = 3
     const barsAcc: BarGeom[] = []
     const conn: { x1: number; x2: number; y: number }[] = []
 
-    const [first, ...rest] = steps
+    const [first, ...rest] = scaledSteps
     const last = rest[rest.length - 1]
     const middle = rest.slice(0, -1)
 
@@ -92,7 +122,7 @@ export function DapMinusWaterfall({ steps = dapMinusSteps }: { steps?: DapMinusS
     pushBar(lastCol, last, yPx(last.value), yPx(0))
 
     return { bars: barsAcc, connectors: conn }
-  }, [steps, iw, ih])
+  }, [scaledSteps, iw, ih])
 
   const yTicks = [0, 400, 800, 1200, 1600]
 
@@ -118,6 +148,12 @@ export function DapMinusWaterfall({ steps = dapMinusSteps }: { steps?: DapMinusS
 
         <p className="mb-2 px-1 text-center text-[11px] italic text-ma-gold-dim">
           Margin anchored downstream; upstream economics are derivative
+          {referenceYear != null && (
+            <span className="mt-1 block font-sans not-italic text-ma-muted">
+              Illustrative bridge scaled to <span className="tabular-nums font-medium text-ma-ink">{referenceYear}</span>{' '}
+              vs 2024 baseline.
+            </span>
+          )}
         </p>
 
         <svg width={width} height={height} className="max-w-full text-ma-ink" role="img" aria-label="DAP minus cost waterfall">
@@ -205,8 +241,9 @@ export function DapMinusWaterfall({ steps = dapMinusSteps }: { steps?: DapMinusS
         </svg>
 
         <p className="mt-1 border-t border-ma-line px-2 py-2 text-[10px] leading-relaxed text-ma-muted">
-          Indicative phosphate cost structure — all figures in US$/t DAP P₂O₅ equivalent. Illustrative prototype only;
-          not Maaden financial statements.
+          Indicative phosphate cost structure — all figures in US$/t DAP P₂O₅ equivalent
+          {referenceYear != null ? ` (${referenceYear} lens).` : '.'} Illustrative prototype only; not Maaden financial
+          statements.
         </p>
       </div>
     </div>

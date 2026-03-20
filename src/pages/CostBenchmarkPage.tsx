@@ -16,8 +16,11 @@ import { formatPct, formatSarM, formatUsdPerTon, peerTierLabel, quartileLabel } 
 import { overheadScenarioEbitdaSarM, scenarioTargetRatio } from '../lib/scenarios'
 import { filterCosts } from '../lib/selectors'
 import { useShellStore } from '../store/shellStore'
+import type { YearKey } from '../data/types'
 
 const scenarioModes = ['median', 'upper_quartile', 'best_in_world'] as const
+
+const filterYears: YearKey[] = [2021, 2023, 2024, 2025, 2030]
 
 export function CostBenchmarkPage() {
   const f = useUrlFilters()
@@ -250,8 +253,25 @@ export function CostBenchmarkPage() {
         <Card
           title="DAP minus — indicative phosphate cost structure"
           subtitle="DAP-minus bridge in US$/t DAP P₂O₅ equivalent: market price less processing and input charges to implied margin. Same illustrative logic as executive phosphate benchmarking packs."
+          action={
+            <label className="flex shrink-0 flex-col items-end gap-1 text-[10px] font-semibold uppercase tracking-wide text-ma-muted">
+              Year
+              <select
+                className="h-9 min-w-[104px] rounded-sm border border-ma-line bg-ma-elevated px-2 text-[13px] font-medium text-ma-ink"
+                value={f.year}
+                aria-label="DAP minus reference year"
+                onChange={(e) => f.setYear(Number(e.target.value) as YearKey)}
+              >
+                {filterYears.map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+              </select>
+            </label>
+          }
         >
-          <DapMinusWaterfall />
+          <DapMinusWaterfall referenceYear={f.year} />
         </Card>
       )}
 

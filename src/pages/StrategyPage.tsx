@@ -116,7 +116,7 @@ export function StrategyPage() {
 
       <Card
         title="Rock phosphate — production & apparent consumption"
-        subtitle="Global rock phosphate (million tonnes), 2012–2030: production versus apparent consumption — useful for discussing aggregate balance, trade, and cycle position in strategy sessions."
+        subtitle="Global rock phosphate (million tonnes), 2012–2030: production, apparent consumption, illustrative benchmark price, with production-line milestones for named in-flight projects (Wa'ad Al Shamal, Ras Al Khair, Phosphate 3 expansion) — for aggregate balance, trade, and cycle dialogue."
       >
         <UsRockPhosphateChart />
       </Card>
