@@ -3,6 +3,14 @@ export { assets } from './assets'
 export { costBenchmarks, costLevers } from './costs'
 export { buildSectorCostCurve } from './sectorCostCurve'
 export type { SectorCostCurveModel, SectorCostCurveSegment } from './sectorCostCurve'
+export {
+  averageSiteCostUsdPerTonForCompany,
+  DAP_CURVE_REFERENCE_SITE_COST_USD,
+  getPhosphateDapSiteRows,
+  parsePhosphateDapCurveCsv,
+  uniqueSortedCompanies,
+} from './phosphateDapCurve'
+export type { PhosphateDapSiteRow } from './phosphateDapCurve'
 export { dapMinusSteps } from './dapMinus'
 export type { DapMinusKind, DapMinusStepDef } from './dapMinus'
 export {

@@ -39,7 +39,7 @@ export function OperationsPage() {
   const assetForFunnel =
     f.asset !== 'all'
       ? f.asset
-      : primary?.assetId ?? assets.find((a) => f.vertical === 'all' || a.verticalId === f.vertical)?.id ?? 'ph_waad'
+      : primary?.assetId ?? assets.find((a) => a.verticalId === f.vertical)?.id ?? 'ph_waad'
 
   const funnel = funnelForAsset(assetForFunnel)
   const pareto = downtimeParetoForAsset(assetForFunnel)

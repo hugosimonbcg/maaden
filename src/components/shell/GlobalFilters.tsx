@@ -45,14 +45,14 @@ export function GlobalFilters({
   onMetricDim,
   onPersona,
 }: {
-  vertical: VerticalId | 'all'
+  vertical: VerticalId
   asset: string | 'all'
   year: YearKey
   cohort: PeerTier
   geo: GeographyFilter
   metricDim: PerformanceDimension | 'all'
   persona: PersonaId
-  onVertical: (v: VerticalId | 'all') => void
+  onVertical: (v: VerticalId) => void
   onAsset: (a: string | 'all') => void
   onYear: (y: YearKey) => void
   onCohort: (c: PeerTier) => void
@@ -83,9 +83,8 @@ export function GlobalFilters({
         <select
           className="h-9 min-w-[160px] rounded-sm border border-ma-line bg-ma-elevated px-2 text-[13px] font-medium text-ma-ink"
           value={vertical}
-          onChange={(e) => onVertical((e.target.value === 'all' ? 'all' : e.target.value) as VerticalId | 'all')}
+          onChange={(e) => onVertical(e.target.value as VerticalId)}
         >
-          <option value="all">All verticals</option>
           {verticals.map((v) => (
             <option key={v.id} value={v.id}>
               {v.label}

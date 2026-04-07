@@ -118,7 +118,7 @@ export const costLevers = [
   },
   {
     id: 'lv_2',
-    lever: 'Smelter power resilience + rolling / VAP netback capture',
+    lever: 'Smelter energy & current efficiency (≤13 MWh/t class) + net carbon / anode stability; rolling / VAP netback',
     owner: 'Chief Power Officer',
     timing: 'Q1 2027',
     ebitdaImpactSarM: 260,

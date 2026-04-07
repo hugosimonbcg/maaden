@@ -12,7 +12,7 @@ function statusLabel(status: string) {
   return status.replace('_', ' ')
 }
 
-export function ActionTrackerPanel({ vertical }: { vertical: VerticalId | 'all' }) {
+export function ActionTrackerPanel({ vertical }: { vertical: VerticalId }) {
   const navigate = useNavigate()
   const panelId = useId()
   const headingId = useId()
@@ -20,7 +20,7 @@ export function ActionTrackerPanel({ vertical }: { vertical: VerticalId | 'all' 
   const collapsed = useShellStore((s) => s.actionTrackerCollapsed)
   const setCollapsed = useShellStore((s) => s.setActionTrackerCollapsed)
 
-  const rows = vertical === 'all' ? actions : actions.filter((a) => a.verticalId === vertical)
+  const rows = actions.filter((a) => a.verticalId === vertical)
 
   return (
     <section

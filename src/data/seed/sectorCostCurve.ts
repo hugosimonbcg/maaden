@@ -1,5 +1,12 @@
 import type { CostBenchmarkRow, VerticalId, YearKey } from '../types'
 import { assets } from './assets'
+import {
+  countryToSectorRegion,
+  getPhosphateDapSiteRows,
+  isMaadenDapSite,
+  maadenPhosphateAssetId,
+  uniqueSortedCompanies,
+} from './phosphateDapCurve'
 
 function yearFactor(y: YearKey): number {
   if (y === 2021) return 0.96
@@ -26,6 +33,14 @@ export interface SectorCostCurveSegment {
   fill: string
   stroke: string
   strokeWidth: number
+  /** DAP site curve (CRU-style pack). */
+  company?: string
+  country?: string
+  site?: string
+  dapConversionUsdPerTon?: number
+  dapNUsdPerTon?: number
+  dapPUsdPerTon?: number
+  dapSUsdPerTon?: number
 }
 
 const regionStyle: Record<
@@ -125,16 +140,91 @@ export interface SectorCostCurveModel {
   unit: string
   xLabel: string
   verticalLabel: string
+  /** Phosphate DAP site table — distinct companies for UI filter. */
+  companyNames?: string[]
+  phosphateSource?: 'dap_sites' | 'synthetic'
+}
+
+function slugPart(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_|_$/g, '')
+    .slice(0, 36)
+}
+
+function buildPhosphateDapSiteCurve(): SectorCostCurveModel | null {
+  const dapRows = getPhosphateDapSiteRows()
+  if (!dapRows.length) return null
+
+  const sorted = [...dapRows].sort((a, b) => a.siteCostUsdPerTon - b.siteCostUsdPerTon)
+  const companyNames = uniqueSortedCompanies(dapRows)
+
+  const combined: Omit<SectorCostCurveSegment, 'cumStartMt'>[] = sorted.map((r, i) => {
+    const capacityMt = Math.max(0.01, r.production000t / 1000)
+    const isMaaden = isMaadenDapSite(r.company, r.site)
+    const peerRegion = countryToSectorRegion(r.country)
+    const region: SectorRegion = isMaaden ? 'maaden' : peerRegion
+    const st = isMaaden ? maadenStyle : regionStyle[peerRegion]
+    const assetId = maadenPhosphateAssetId(r.company, r.site)
+    const label = r.site.length > 22 ? `${r.site.slice(0, 20)}…` : r.site
+    return {
+      id: `${slugPart(r.company)}_${slugPart(r.site)}_${i}`,
+      label,
+      fullName: `${r.company} · ${r.site} · ${r.country}`,
+      region,
+      capacityMt,
+      c1UsdPerTon: Math.round(r.siteCostUsdPerTon * 1000) / 1000,
+      isMaaden,
+      assetId,
+      fill: st.fill,
+      stroke: st.stroke,
+      strokeWidth: isMaaden ? maadenStyle.strokeWidth : 1,
+      company: r.company,
+      country: r.country,
+      site: r.site,
+      dapConversionUsdPerTon: r.dapConversionUsdPerTon,
+      dapNUsdPerTon: r.dapNUsdPerTon,
+      dapPUsdPerTon: r.dapPUsdPerTon,
+      dapSUsdPerTon: r.dapSUsdPerTon,
+    }
+  })
+
+  let cum = 0
+  const segments: SectorCostCurveSegment[] = combined.map((s) => {
+    const seg = { ...s, cumStartMt: cum }
+    cum += s.capacityMt
+    return seg
+  })
+
+  const totalCapacityMt = cum
+  const maxCost = Math.max(...segments.map((s) => s.c1UsdPerTon), 1) * 1.06
+
+  return {
+    segments,
+    totalCapacityMt,
+    maxCost,
+    unit: 'US$/t DAP site cost',
+    xLabel: 'Cumulative DAP capacity (Mt / yr)',
+    verticalLabel: 'Phosphate & derivative value chain',
+    companyNames,
+    phosphateSource: 'dap_sites',
+  }
 }
 
 export function buildSectorCostCurve(
-  vertical: VerticalId | 'all',
+  vertical: VerticalId,
   year: YearKey,
   rows: CostBenchmarkRow[],
 ): SectorCostCurveModel | null {
   if (vertical === 'corporate') return null
 
-  const vf: VerticalId = vertical === 'all' ? 'phosphate' : vertical
+  if (vertical === 'phosphate') {
+    const dap = buildPhosphateDapSiteCurve()
+    if (dap) return dap
+  }
+
+  const vf = vertical
   const seeds = seedsForVertical(vf)
   if (!seeds) return null
 
@@ -160,14 +250,10 @@ export function buildSectorCostCurve(
   /** Keep Maaden on the chart when portfolio C1 is far above the global merit band (hero / scenario). */
   const maadenCurveCap = Math.min(125, Math.round(extMaxC1 * 1.16 + 8))
 
-  const maadenVerticalFilter = (assetId: string) => {
-    const a = assets.find((x) => x.id === assetId)
-    if (!a) return false
-    if (vertical === 'all') return a.verticalId === vf
-    return a.verticalId === vertical
-  }
-
-  const maadenRows = rows.filter((r) => r.c1UsdPerTon > 0 && maadenVerticalFilter(r.assetId))
+  const maadenRows = rows.filter((r) => {
+    const a = assets.find((x) => x.id === r.assetId)
+    return r.c1UsdPerTon > 0 && a && a.verticalId === vertical
+  })
   const maaden: Omit<SectorCostCurveSegment, 'cumStartMt'>[] = maadenRows.map((r) => {
     const a = assets.find((x) => x.id === r.assetId)!
     const cap = Math.round((r.productTonnes / 1e6) * 10) / 10
@@ -216,5 +302,13 @@ export function buildSectorCostCurve(
         ? 'Primary aluminum'
         : 'Gold / ore treatment'
 
-  return { segments, totalCapacityMt, maxCost, unit, xLabel, verticalLabel }
+  return {
+    segments,
+    totalCapacityMt,
+    maxCost,
+    unit,
+    xLabel,
+    verticalLabel,
+    phosphateSource: 'synthetic',
+  }
 }

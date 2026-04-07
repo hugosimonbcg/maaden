@@ -3,7 +3,7 @@ import { assets } from './assets'
 
 const years: YearKey[] = [2023, 2024, 2025, 2030]
 
-/** 2021 diagnostic themes (2020 ops anchor): recovery gaps, smelter vs rolling, GBM scale/AISC — trend years add slight improvement. */
+/** 2021 diagnostic + Phase 1 ops benchmark (FY25 smelter peer pack): CE / energy / carbon / potlining — illustrative series. */
 type OpSeed = {
   yieldPct: number
   recoveryPct: number
@@ -40,26 +40,29 @@ const opSeed: Record<string, OpSeed> = {
     peerYieldPct: { peer_median: 74, top_quartile: 84, best_in_world: 91 },
   },
   al_smelter: {
-    yieldPct: 94.5,
-    recoveryPct: 93.2,
-    oee: 91,
+    /** Yield series used as current-efficiency proxy; ~90% vs peer 92–96% band from smelter benchmark. */
+    yieldPct: 90.5,
+    recoveryPct: 93.0,
+    oee: 88,
     utilization: 100,
-    downtimePlannedHrs: 310,
-    downtimeUnplannedHrs: 265,
-    energyGjPerTon: 13.35,
+    downtimePlannedHrs: 328,
+    downtimeUnplannedHrs: 288,
+    /** ~13.4 MWh/t Al ≈ 48.2 GJ/t (top-quartile pack ~13.0 MWh/t). */
+    energyGjPerTon: 48.2,
     waterM3PerTon: 1.55,
-    peerYieldPct: { peer_median: 90, top_quartile: 92.5, best_in_world: 94.2 },
+    peerYieldPct: { peer_median: 92.0, top_quartile: 94.0, best_in_world: 95.5 },
   },
   al_refining: {
-    yieldPct: 91,
-    recoveryPct: 89.5,
-    oee: 77,
+    yieldPct: 90.2,
+    recoveryPct: 88.8,
+    oee: 76,
     utilization: 73,
-    downtimePlannedHrs: 440,
-    downtimeUnplannedHrs: 355,
-    energyGjPerTon: 48.6,
+    downtimePlannedHrs: 455,
+    downtimeUnplannedHrs: 368,
+    /** Alumina refinery thermal intensity (GJ/t Al₂O₃), order-of-magnitude vs NG/caustic benchmark themes. */
+    energyGjPerTon: 10.6,
     waterM3PerTon: 1.82,
-    peerYieldPct: { peer_median: 88, top_quartile: 90, best_in_world: 92 },
+    peerYieldPct: { peer_median: 89.0, top_quartile: 90.5, best_in_world: 92.0 },
   },
   gb_duwayhi: {
     yieldPct: 87.5,
@@ -131,6 +134,22 @@ export const operationalKpis: OperationalKpiRow[] = assets.flatMap((a) =>
 )
 
 export function funnelForAsset(assetId: string): FunnelStage[] {
+  if (assetId === 'al_smelter') {
+    return [
+      { stage: 'Alumina to cells / bath stability', value: 100, lossToNext: 1.8 },
+      { stage: 'Electrolysis (CE & AE control)', value: 98.2, lossToNext: 4.2 },
+      { stage: 'Metal tap & crucible', value: 94.0, lossToNext: 2.4 },
+      { stage: 'Cast / saleable metal', value: 91.6 },
+    ]
+  }
+  if (assetId === 'al_refining') {
+    return [
+      { stage: 'Bauxite feed & digestion', value: 100, lossToNext: 3.1 },
+      { stage: 'Clarification & precipitation', value: 96.9, lossToNext: 2.4 },
+      { stage: 'Calcination & hydrate', value: 94.5, lossToNext: 1.9 },
+      { stage: 'Smelter-grade alumina', value: 92.6 },
+    ]
+  }
   if (assetId === 'ph_waad' || assetId === 'ph_ras') {
     return [
       { stage: 'ROM / feed', value: 100, lossToNext: 18 },
@@ -149,7 +168,25 @@ export function funnelForAsset(assetId: string): FunnelStage[] {
 
 export function downtimeParetoForAsset(assetId: string): DowntimeCategory[] {
   const skew =
-    assetId.includes('al') ? 1.1 : assetId.includes('gb') ? 1.05 : 1
+    assetId.includes('al') ? 1.08 : assetId.includes('gb') ? 1.05 : 1
+  if (assetId === 'al_smelter') {
+    return [
+      { category: 'Potlining / lining & relining', hours: Math.round(118 * skew), pct: 28 },
+      { category: 'Anode / rodding & carbon plant', hours: Math.round(98 * skew), pct: 23 },
+      { category: 'Power modulation / grid events', hours: Math.round(82 * skew), pct: 19 },
+      { category: 'Beam & bus / AE recovery', hours: Math.round(68 * skew), pct: 17 },
+      { category: 'Other corrective', hours: Math.round(52 * skew), pct: 13 },
+    ]
+  }
+  if (assetId === 'al_refining') {
+    return [
+      { category: 'Digestion / precipitation outages', hours: Math.round(124 * skew), pct: 30 },
+      { category: 'Calciner / steam & NG', hours: Math.round(96 * skew), pct: 23 },
+      { category: 'Red mud / liquor handling', hours: Math.round(72 * skew), pct: 18 },
+      { category: 'Rotating equipment & mechanical', hours: Math.round(58 * skew), pct: 15 },
+      { category: 'Other corrective', hours: Math.round(44 * skew), pct: 14 },
+    ]
+  }
   if (assetId.includes('gb')) {
     return [
       { category: 'Mill / crusher mechanical', hours: Math.round(132 * skew), pct: 34 },

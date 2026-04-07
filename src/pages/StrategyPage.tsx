@@ -41,15 +41,15 @@ export function StrategyPage() {
   const copy = usePersonaCopy(f.persona, 'strategy') as StrategyLensCopy
   const [strategyLens, setStrategyLens] = useState<'backward' | 'forward'>('backward')
 
-  const chain = useMemo(() => {
-    if (f.vertical === 'all') return valueChainNodes
-    return valueChainNodes.filter((v) => v.verticalId === f.vertical)
-  }, [f.vertical])
+  const chain = useMemo(
+    () => valueChainNodes.filter((v) => v.verticalId === f.vertical),
+    [f.vertical],
+  )
 
-  const mix = useMemo(() => {
-    if (f.vertical === 'all') return productMixMatrix
-    return productMixMatrix.filter((m) => m.verticalId === f.vertical)
-  }, [f.vertical])
+  const mix = useMemo(
+    () => productMixMatrix.filter((m) => m.verticalId === f.vertical),
+    [f.vertical],
+  )
 
   const exposureChart = marketExposure.map((m) => ({
     name: `${m.region} · ${m.segment}`,
@@ -214,7 +214,7 @@ export function StrategyPage() {
       <Card title="Strategic options" subtitle="Theses with explicit risks — not undebated growth wishlists.">
         <div className="grid gap-4 lg:grid-cols-3">
           {strategicOptions
-            .filter((o) => f.vertical === 'all' || o.verticalId === f.vertical)
+            .filter((o) => o.verticalId === f.vertical)
             .map((o) => (
               <div key={o.id} className="flex flex-col rounded-sm border border-ma-line bg-ma-surface p-4">
                 <h3 className="text-[14px] font-semibold text-ma-ink">{o.title}</h3>

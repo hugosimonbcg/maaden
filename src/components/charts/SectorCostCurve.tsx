@@ -33,6 +33,7 @@ export function SectorCostCurve({
   const [width, setWidth] = useState(720)
   const [hovered, setHovered] = useState<SectorCostCurveSegment | null>(null)
   const [tipPos, setTipPos] = useState({ x: 0, y: 0 })
+  const [selectedCompany, setSelectedCompany] = useState<string | null>(null)
 
   useEffect(() => {
     const el = containerRef.current
@@ -49,7 +50,12 @@ export function SectorCostCurve({
   const height = 380
   const iw = width - margin.left - margin.right
   const ih = height - margin.top - margin.bottom
-  const { segments, totalCapacityMt, maxCost, unit, xLabel } = model
+  const { segments, totalCapacityMt, maxCost, unit, xLabel, companyNames, phosphateSource } = model
+  const isDapSites = phosphateSource === 'dap_sites'
+  const costMetricLabel = isDapSites ? 'DAP site cost' : 'C1 cash cost'
+
+  const isCompanyEmphasized = (s: SectorCostCurveSegment) =>
+    !selectedCompany || (s.company != null && s.company === selectedCompany)
 
   const xPx = (mt: number) => margin.left + (mt / totalCapacityMt) * iw
   const yPx = (cost: number) => margin.top + ih - (cost / maxCost) * ih
@@ -96,6 +102,29 @@ export function SectorCostCurve({
 
   return (
     <div ref={containerRef} className="relative w-full">
+      {companyNames && companyNames.length > 0 && (
+        <div className="mb-3 flex flex-wrap items-end justify-end gap-3">
+          <label className="flex flex-col gap-1 text-[10px] font-semibold uppercase tracking-wide text-ma-muted">
+            Company
+            <select
+              className="h-9 min-w-[200px] max-w-[min(100%,320px)] rounded-sm border border-ma-line bg-ma-elevated px-2 text-[13px] font-medium text-ma-ink"
+              value={selectedCompany ?? ''}
+              aria-label="Highlight sites for one company"
+              onChange={(e) => {
+                const v = e.target.value
+                setSelectedCompany(v === '' ? null : v)
+              }}
+            >
+              <option value="">All companies</option>
+              {companyNames.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      )}
       <svg
         width={width}
         height={height}
@@ -185,6 +214,7 @@ export function SectorCostCurve({
             const x = s.isMaaden ? xRight - w : xLeftNatural
             const y = yPx(s.c1UsdPerTon)
             const h = margin.top + ih - y
+            const emphasized = isCompanyEmphasized(s)
             return (
               <rect
                 key={s.id}
@@ -195,7 +225,8 @@ export function SectorCostCurve({
                 fill={s.fill}
                 stroke={s.stroke}
                 strokeWidth={s.strokeWidth}
-                className={s.isMaaden ? 'cursor-pointer' : 'cursor-default'}
+                opacity={emphasized ? 1 : 0.32}
+                className={`transition-opacity duration-150 ${s.isMaaden ? 'cursor-pointer' : 'cursor-default'}`}
                 onMouseEnter={(e) => {
                   setHovered(s)
                   const r = containerRef.current?.getBoundingClientRect()
@@ -259,7 +290,7 @@ export function SectorCostCurve({
         >
           <p className="font-semibold text-ma-ink">{hovered.fullName}</p>
           <p className="mt-1 tabular-nums text-ma-muted">
-            C1 cash cost:{' '}
+            {costMetricLabel}:{' '}
             <span className="font-medium text-ma-ink">
               {formatUsdPerTon(hovered.c1UsdPerTonReported ?? hovered.c1UsdPerTon)}
             </span>
@@ -269,8 +300,28 @@ export function SectorCostCurve({
               Merit-order bar height capped at {formatUsdPerTon(hovered.c1UsdPerTon)} for sector scale.
             </p>
           )}
-          <p className="tabular-nums text-ma-muted">
-            Capacity: <span className="font-medium text-ma-ink">{formatNumber(hovered.capacityMt, 1)} Mt</span>
+          {isDapSites &&
+            (hovered.dapConversionUsdPerTon != null ||
+              hovered.dapNUsdPerTon != null ||
+              hovered.dapPUsdPerTon != null ||
+              hovered.dapSUsdPerTon != null) && (
+              <ul className="mt-1.5 space-y-0.5 border-t border-ma-line/80 pt-1.5 text-[10px] text-ma-muted">
+                {hovered.dapConversionUsdPerTon != null && (
+                  <li className="tabular-nums">Conversion: {formatUsdPerTon(hovered.dapConversionUsdPerTon)}</li>
+                )}
+                {hovered.dapNUsdPerTon != null && (
+                  <li className="tabular-nums">Purchased N: {formatUsdPerTon(hovered.dapNUsdPerTon)}</li>
+                )}
+                {hovered.dapPUsdPerTon != null && (
+                  <li className="tabular-nums">Purchased P: {formatUsdPerTon(hovered.dapPUsdPerTon)}</li>
+                )}
+                {hovered.dapSUsdPerTon != null && (
+                  <li className="tabular-nums">Purchased S: {formatUsdPerTon(hovered.dapSUsdPerTon)}</li>
+                )}
+              </ul>
+            )}
+          <p className="mt-1 tabular-nums text-ma-muted">
+            Capacity: <span className="font-medium text-ma-ink">{formatNumber(hovered.capacityMt, 2)} Mt</span>
           </p>
           {hovered.isMaaden && <p className="mt-1 text-[10px] text-ma-teal">Click for driver drill-down</p>}
         </div>

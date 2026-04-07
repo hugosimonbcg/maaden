@@ -2,6 +2,10 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import type { YearKey } from '../../data/types'
 import type { DapMinusStepDef } from '../../data/seed/dapMinus'
 import { dapMinusSteps } from '../../data/seed/dapMinus'
+import {
+  averageSiteCostUsdPerTonForCompany,
+  DAP_CURVE_REFERENCE_SITE_COST_USD,
+} from '../../data/seed/phosphateDapCurve'
 
 /** Same lens as cost seed data — scales illustrative DAP-minus dollars vs 2024 baseline. */
 function yearFactor(y: YearKey): number {
@@ -32,13 +36,23 @@ type BarGeom = {
   yBot: number
 }
 
+function companySiteCostFactor(company: string | null): number {
+  const avg = averageSiteCostUsdPerTonForCompany(company)
+  if (avg == null) return 1
+  const raw = avg / DAP_CURVE_REFERENCE_SITE_COST_USD
+  return Math.min(1.28, Math.max(0.82, raw))
+}
+
 export function DapMinusWaterfall({
   steps = dapMinusSteps,
   referenceYear,
+  selectedDapCompany,
 }: {
   steps?: DapMinusStepDef[]
-  /** When set, scales bridge vs 2024 baseline and labels the view. */
+  /** Global filter year — scales bridge vs 2024 baseline. */
   referenceYear?: YearKey
+  /** When set, scales illustrative deductions vs seeded MPC site-cost anchor (same company list as sector curve). */
+  selectedDapCompany?: string | null
 }) {
   const gid = useId()
   const containerRef = useRef<HTMLDivElement>(null)
@@ -62,18 +76,22 @@ export function DapMinusWaterfall({
 
   const yPx = (v: number) => margin.top + ih - (v / maxV) * ih
 
+  const companyAvgSiteUsd =
+    selectedDapCompany != null ? averageSiteCostUsdPerTonForCompany(selectedDapCompany) : null
+
   const scaledSteps = useMemo(() => {
     const y = referenceYear ?? 2024
     const yf = yearFactor(y) / yearFactor(2024)
+    const cf = companySiteCostFactor(selectedDapCompany ?? null)
     const [first, ...rest] = steps
     const last = rest[rest.length - 1]
     const middle = rest.slice(0, -1)
     const firstV = Math.round(first.value * yf)
-    const middleScaled = middle.map((s) => ({ ...s, value: Math.round(s.value * yf) }))
+    const middleScaled = middle.map((s) => ({ ...s, value: Math.round(s.value * yf * cf) }))
     const ded = middleScaled.reduce((a, s) => a + s.value, 0)
     const marginV = Math.max(0, firstV - ded)
     return [{ ...first, value: firstV }, ...middleScaled, { ...last, value: marginV }]
-  }, [steps, referenceYear])
+  }, [steps, referenceYear, selectedDapCompany])
 
   const { bars, connectors } = useMemo(() => {
     const n = scaledSteps.length
@@ -148,12 +166,23 @@ export function DapMinusWaterfall({
 
         <p className="mb-2 px-1 text-center text-[11px] italic text-ma-gold-dim">
           Margin anchored downstream; upstream economics are derivative
-          {referenceYear != null && (
-            <span className="mt-1 block font-sans not-italic text-ma-muted">
-              Illustrative bridge scaled to <span className="tabular-nums font-medium text-ma-ink">{referenceYear}</span>{' '}
-              vs 2024 baseline.
-            </span>
-          )}
+          <span className="mt-1 block font-sans not-italic text-ma-muted">
+            {referenceYear != null && (
+              <span className="block">
+                Year lens{' '}
+                <span className="tabular-nums font-medium text-ma-ink">{referenceYear}</span> (global filter) vs 2024
+                baseline.
+              </span>
+            )}
+            {selectedDapCompany != null && companyAvgSiteUsd != null && (
+              <span className="mt-1 block">
+                Company context: <span className="font-medium text-ma-ink">{selectedDapCompany}</span> — avg DAP site
+                cost{' '}
+                <span className="tabular-nums font-medium text-ma-ink">{companyAvgSiteUsd.toFixed(1)}</span> US$/t;
+                deductions scaled vs MPC reference ({DAP_CURVE_REFERENCE_SITE_COST_USD.toFixed(1)} US$/t).
+              </span>
+            )}
+          </span>
         </p>
 
         <svg width={width} height={height} className="max-w-full text-ma-ink" role="img" aria-label="DAP minus cost waterfall">
@@ -242,8 +271,11 @@ export function DapMinusWaterfall({
 
         <p className="mt-1 border-t border-ma-line px-2 py-2 text-[10px] leading-relaxed text-ma-muted">
           Indicative phosphate cost structure — all figures in US$/t DAP P₂O₅ equivalent
-          {referenceYear != null ? ` (${referenceYear} lens).` : '.'} Illustrative prototype only; not Maaden financial
-          statements.
+          {referenceYear != null ? ` (${referenceYear} lens).` : '.'}
+          {selectedDapCompany != null
+            ? ' Deductions rescaled to selected producer’s avg site cost vs seeded MPC anchor — still illustrative.'
+            : ''}{' '}
+          Illustrative prototype only; not Maaden financial statements.
         </p>
       </div>
     </div>

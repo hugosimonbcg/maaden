@@ -10,17 +10,14 @@ import { DrillDrawer } from '../components/ui/DrillDrawer'
 import { useUrlFilters } from '../hooks/useUrlFilters'
 import { usePersonaCopy } from '../hooks/usePersonaCopy'
 import { useSimulatedLoad } from '../hooks/useSimulatedLoad'
-import { assets, buildSectorCostCurve, costLevers } from '../data/seed'
+import { assets, buildSectorCostCurve, costLevers, getPhosphateDapSiteRows, uniqueSortedCompanies } from '../data/seed'
 import { findPresetById } from '../lib/aiMatch'
 import { formatPct, formatSarM, formatUsdPerTon, peerTierLabel, quartileLabel } from '../lib/format'
 import { overheadScenarioEbitdaSarM, scenarioTargetRatio } from '../lib/scenarios'
 import { filterCosts } from '../lib/selectors'
 import { useShellStore } from '../store/shellStore'
-import type { YearKey } from '../data/types'
 
 const scenarioModes = ['median', 'upper_quartile', 'best_in_world'] as const
-
-const filterYears: YearKey[] = [2021, 2023, 2024, 2025, 2030]
 
 export function CostBenchmarkPage() {
   const f = useUrlFilters()
@@ -31,6 +28,9 @@ export function CostBenchmarkPage() {
   const rows = useMemo(() => filterCosts(f.filterState), [f.filterState])
   const [drillTitle, setDrillTitle] = useState<string | null>(null)
   const [scenarioIdx, setScenarioIdx] = useState(1)
+  const [dapMinusCompany, setDapMinusCompany] = useState<string | null>(null)
+
+  const dapMinusCompanyOptions = useMemo(() => uniqueSortedCompanies(getPhosphateDapSiteRows()), [])
 
   const primary = rows[0]
   const avgQuartile = useMemo(() => {
@@ -119,9 +119,7 @@ export function CostBenchmarkPage() {
       })
     : 0
 
-  const leverRows = costLevers.filter(
-    (l) => f.vertical === 'all' || l.verticalId === f.vertical,
-  )
+  const leverRows = costLevers.filter((l) => l.verticalId === f.vertical)
 
   const valueAtStake = Math.round(chartData.reduce((s, d) => s + Math.max(0, d.gap) * 0.32, 0))
 
@@ -221,10 +219,16 @@ export function CostBenchmarkPage() {
       </div>
 
       <Card
-        title="Sector cost curve — C1 cash cost"
+        title={
+          sectorCurve?.phosphateSource === 'dap_sites'
+            ? 'Sector cost curve — DAP site cost'
+            : 'Sector cost curve — C1 cash cost'
+        }
         subtitle={
           sectorCurve
-            ? `${sectorCurve.verticalLabel} · bars ordered low-cost → high-cost; width ∝ illustrative capacity, height ∝ unit C1. Maaden assets highlighted. Red dashed = merit-order envelope; amber line = ${peerTierLabel(f.cohort)} reference for the primary filtered row. External actors are synthetic for prototype narrative.`
+            ? sectorCurve.phosphateSource === 'dap_sites'
+              ? `${sectorCurve.verticalLabel} · Site-level CRU-style pack: bars low-cost → high-cost; bar width ∝ DAP capacity (Mt/yr); height ∝ DAP site cost (US$/t). MPC / MWSPC highlighted. Red dashed = merit-order envelope; amber line = ${peerTierLabel(f.cohort)} reference from the primary filtered portfolio row (may differ in basis from DAP site cost).`
+              : `${sectorCurve.verticalLabel} · bars ordered low-cost → high-cost; width ∝ illustrative capacity, height ∝ unit C1. Maaden assets highlighted. Red dashed = merit-order envelope; amber line = ${peerTierLabel(f.cohort)} reference for the primary filtered row. External actors are synthetic for prototype narrative.`
             : 'Select an operating vertical to view a sector merit-order curve.'
         }
       >
@@ -236,6 +240,7 @@ export function CostBenchmarkPage() {
         ) : (
           <div className="w-full min-w-0">
             <SectorCostCurve
+              key={`${f.vertical}-${sectorCurve.phosphateSource ?? 'na'}-${sectorCurve.segments.length}`}
               model={sectorCurve}
               benchmarkUsdPerTon={cohortBenchmarkUsd}
               benchmarkLabel={
@@ -249,29 +254,30 @@ export function CostBenchmarkPage() {
         )}
       </Card>
 
-      {(f.vertical === 'phosphate' || f.vertical === 'all') && (
+      {f.vertical === 'phosphate' && (
         <Card
           title="DAP minus — indicative phosphate cost structure"
-          subtitle="DAP-minus bridge in US$/t DAP P₂O₅ equivalent: market price less processing and input charges to implied margin. Same illustrative logic as executive phosphate benchmarking packs."
+          subtitle="DAP-minus bridge in US$/t DAP P₂O₅ equivalent: market price less processing and input charges to implied margin. Year follows global filters; use Company to rescale deductions vs the sector-curve producer set (MPC site-cost anchor)."
           action={
             <label className="flex shrink-0 flex-col items-end gap-1 text-[10px] font-semibold uppercase tracking-wide text-ma-muted">
-              Year
+              Company
               <select
-                className="h-9 min-w-[104px] rounded-sm border border-ma-line bg-ma-elevated px-2 text-[13px] font-medium text-ma-ink"
-                value={f.year}
-                aria-label="DAP minus reference year"
-                onChange={(e) => f.setYear(Number(e.target.value) as YearKey)}
+                className="h-9 min-w-[200px] max-w-[min(100%,280px)] rounded-sm border border-ma-line bg-ma-elevated px-2 text-[13px] font-medium text-ma-ink"
+                value={dapMinusCompany ?? ''}
+                aria-label="DAP minus company context"
+                onChange={(e) => setDapMinusCompany(e.target.value === '' ? null : e.target.value)}
               >
-                {filterYears.map((y) => (
-                  <option key={y} value={y}>
-                    {y}
+                <option value="">All companies</option>
+                {dapMinusCompanyOptions.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
                   </option>
                 ))}
               </select>
             </label>
           }
         >
-          <DapMinusWaterfall referenceYear={f.year} />
+          <DapMinusWaterfall referenceYear={f.year} selectedDapCompany={dapMinusCompany} />
         </Card>
       )}
 

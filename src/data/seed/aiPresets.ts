@@ -91,7 +91,7 @@ export const aiPresets: AiPreset[] = [
     routeTags: ['operations'],
     response: {
       summary:
-        'For integrated phosphate, the mass-balance story matches the diagnostic: largest losses sit between ROM, beneficiation, and acid circuit stability vs a ~92% Q1 ROM→acid benchmark; short stops and grade variability amplify the gap. Aluminum smelter lines run above nameplate with a different loss profile than refinery or rolling.',
+        'For integrated phosphate, the mass-balance story matches the diagnostic: largest losses sit between ROM, beneficiation, and acid circuit stability vs a ~92% Q1 ROM→acid benchmark; short stops and grade variability amplify the gap. For aluminum, Phase 1 ops benchmarks emphasize current efficiency and specific energy vs a ~92–96% peer band, potlining/relining rhythm, and anode/carbon stability — refinery losses concentrate in digestion–precipitation and calciner availability.',
       reasoning: [
         'Loss tree compares historian mass balance to theoretical yield; phosphate funnel stages weighted to recovery KPIs from the 2021 exercise.',
         'Best-in-class band uses Q1 peer anchors from the diagnostic, adjusted for asset technology type.',
@@ -111,7 +111,7 @@ export const aiPresets: AiPreset[] = [
     routeTags: ['operations'],
     response: {
       summary:
-        'Category mix is asset-specific: integrated phosphate skews to rotating equipment and I&C; gold sites emphasize mill/crusher and PM-compliance-driven stops. Power events are episodic but high severity when they occur.',
+        'Category mix is asset-specific: integrated phosphate skews to rotating equipment and I&C; aluminum smelter skews to potlining, carbon/anode, and grid modulation; alumina refinery to digestion/precipitation and calciner/steam; gold sites emphasize mill/crusher and PM-compliance-driven stops. Power events are episodic but high severity when they occur.',
       reasoning: [
         'Pareto built from CMMS work orders classified to standard reliability taxonomy; seed profiles mirror diagnostic emphasis by vertical.',
       ],

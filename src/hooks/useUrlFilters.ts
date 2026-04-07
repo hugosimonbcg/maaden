@@ -4,10 +4,11 @@ import type { GeographyFilter, PeerTier, PerformanceDimension, PersonaId, Vertic
 
 const PEERS: PeerTier[] = ['peer_median', 'top_quartile', 'best_in_world']
 
-function parseVertical(v: string | null): VerticalId | 'all' {
-  if (!v || v === 'all') return 'all'
-  if (v === 'phosphate' || v === 'aluminum' || v === 'gold_base_metals' || v === 'corporate') return v
-  return 'all'
+const VERTICAL_IDS: VerticalId[] = ['phosphate', 'aluminum', 'gold_base_metals', 'corporate']
+
+function parseVertical(v: string | null): VerticalId {
+  if (v && VERTICAL_IDS.includes(v as VerticalId)) return v as VerticalId
+  return 'phosphate'
 }
 
 function parseYear(v: string | null): YearKey {
@@ -80,7 +81,8 @@ export function useUrlFilters() {
     metricDim,
     persona,
     filterState,
-    setVertical: (v: VerticalId | 'all') => setParams({ vertical: v === 'all' ? undefined : v, asset: 'all' }),
+    setVertical: (v: VerticalId) =>
+      setParams({ vertical: v === 'phosphate' ? undefined : v, asset: undefined }),
     setAsset: (a: string | 'all') => setParams({ asset: a === 'all' ? undefined : a }),
     setYear: (y: YearKey) => setParams({ year: y }),
     setCohort: (c: PeerTier) => setParams({ cohort: c }),
