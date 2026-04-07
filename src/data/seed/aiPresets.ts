@@ -7,18 +7,18 @@ export const aiPresets: AiPreset[] = [
     routeTags: ['cost'],
     response: {
       summary:
-        'Across the integrated phosphate chain, Waad Al Shamal tracks second quartile on C1 cash cost on a phosphate-acid equivalent basis for 2023–2025, with 2025 showing a 2.1% improvement vs 2023. Ras Al Khair finishing sits closer to the peer median on DAP cash cost due to acid logistics exposure.',
+        'Waad Al Shamal sits in the first quartile on C1 cash cost (phosphate-acid equivalent) in the 2021 full-business diagnostic (2020 anchor), while operational recovery ROM→acid and beneficiation remain well below Q1 peer benchmarks — the dominant value gap is yield, not unit cash cost at the mine gate. Ras Al Khair finishing is competitive on cost but exposed to acid logistics and India seasonal offtake.',
       reasoning: [
-        'Peer curves are built from Capital IQ cost disclosures and WoodMac phosphate benchmarks, normalized to acid-equivalent tonnes.',
-        'Internal actuals reconcile to ERP cost centers with historian validation on energy and reagent drivers.',
-        'Quartile ranks are stable year-on-year; largest variance is energy and reagent intensity, not labour.',
+        'Peer curves blend Capital IQ / public disclosures with the 2021 Board-commissioned benchmarking exercise (150+ KPIs, 5–10 peers per business).',
+        'Internal actuals reconcile to ERP cost centers; historian tags anchor energy and reagent drivers.',
+        'Phosphate narrative tension: strong cost position vs deteriorating margin and recovery headroom vs OCP / PhosAgro / Mosaic-style peers.',
       ],
       confidence: 0.86,
       sources: ['erp', 'capital_iq', 'woodmac', 'investor_filings'],
       lineage: [
-        'costBenchmarks: ph_waad, years 2023–2025',
-        'costBenchmarks: ph_ras, years 2023–2025',
-        'peerArchetypes: Integrated phosphate majors',
+        'costBenchmarks: ph_waad, ph_ras (aligned to 2021 diagnostic, 2020 anchor)',
+        'operationalKpis: recovery vs Q1 peer band',
+        'peerArchetypes: Mosaic, OCP, PhosAgro',
       ],
       followUps: [
         { label: 'Waterfall by driver for 2025', promptId: 'ai_cost_waterfall' },
@@ -91,10 +91,10 @@ export const aiPresets: AiPreset[] = [
     routeTags: ['operations'],
     response: {
       summary:
-        'Yield loss vs best-in-class is concentrated post-primary separation: grind/leach (or digest) stability and short stops account for the majority of the gap; planned downtime is within peer norms.',
+        'For integrated phosphate, the mass-balance story matches the diagnostic: largest losses sit between ROM, beneficiation, and acid circuit stability vs a ~92% Q1 ROM→acid benchmark; short stops and grade variability amplify the gap. Aluminum smelter lines run above nameplate with a different loss profile than refinery or rolling.',
       reasoning: [
-        'Loss tree compares historian mass balance to modeled theoretical yield.',
-        'Best-in-class anchor uses a non-mining process exemplar band adjusted for physics constraints.',
+        'Loss tree compares historian mass balance to theoretical yield; phosphate funnel stages weighted to recovery KPIs from the 2021 exercise.',
+        'Best-in-class band uses Q1 peer anchors from the diagnostic, adjusted for asset technology type.',
       ],
       confidence: 0.79,
       sources: ['historian', 'erp', 'public'],
@@ -111,9 +111,9 @@ export const aiPresets: AiPreset[] = [
     routeTags: ['operations'],
     response: {
       summary:
-        'Rotating equipment and I&C dominate unplanned hours; power events are episodic but high severity when they occur.',
+        'Category mix is asset-specific: integrated phosphate skews to rotating equipment and I&C; gold sites emphasize mill/crusher and PM-compliance-driven stops. Power events are episodic but high severity when they occur.',
       reasoning: [
-        'Pareto built from CMMS work orders classified to standard reliability taxonomy.',
+        'Pareto built from CMMS work orders classified to standard reliability taxonomy; seed profiles mirror diagnostic emphasis by vertical.',
       ],
       confidence: 0.83,
       sources: ['erp', 'historian'],
@@ -127,10 +127,10 @@ export const aiPresets: AiPreset[] = [
     routeTags: ['portfolio'],
     response: {
       summary:
-        'A marginal shift of growth capex toward GBM expansion and phosphate debottlenecking improves portfolio ROIC at constant risk appetite, assuming smelter resilience packages remain funded to protect power-adjusted conversion.',
+        'The 2021 storyline pairs stretched leverage with operational catch-up: marginal growth tilt toward GBM LOM/extension and phosphate recovery/debottleneck improves portfolio ROIC at constant risk, only if smelter sustaining and power-resilience envelopes stay funded and aluminum downstream (rolling/VAP) is sized to offtake.',
       reasoning: [
         'Bubble positions use ROIC vs project risk from the capital committee fact pack.',
-        'Recommended allocation respects minimum sustaining thresholds by vertical.',
+        'Minimum sustaining thresholds by vertical reflect diagnostic CAPEX/D&A and maintenance backlog themes.',
       ],
       confidence: 0.72,
       sources: ['erp', 'capital_iq', 'investor_filings'],
@@ -162,10 +162,10 @@ export const aiPresets: AiPreset[] = [
     routeTags: ['strategy'],
     response: {
       summary:
-        'The largest right-to-win gap is in operational predictability (OEE + short-stop rate) versus non-mining exemplars, not in reserve quality. Second is VAP share and pricing realization in phosphate vs integrated majors.',
+        'The 2021 diagnostic framed the headline tension as world-class assets with underperforming operations and a stretched balance sheet: near-term right-to-win is operational excellence (phosphate recovery, aluminum rolling/VAP, gold maintenance/OEE) plus portfolio differentiation away from commodity-heavy mix — not reserve quality alone.',
       reasoning: [
-        'Archetype cards synthesize marketing mix, cost position, and asset endowment.',
-        'Exemplars are used only where metric definitions align after normalization.',
+        'Archetypes include diversified miners (BHP, Rio, Anglo, Vale) for TSR vs fundamentals, and phosphate majors (Mosaic, OCP, PhosAgro) for mix.',
+        'Exemplar operators (Nucor, Shell-class process) anchor maintenance and energy discipline where definitions align.',
       ],
       confidence: 0.77,
       sources: ['woodmac', 'capital_iq', 'public', 'investor_filings'],
@@ -181,9 +181,9 @@ export const aiPresets: AiPreset[] = [
     routeTags: ['strategy', 'portfolio'],
     response: {
       summary:
-        'Selective phosphate VAP build and GBM expansion score highest on strategic fit vs return threshold; smelter downstream requires disciplined offtake structuring to avoid return dilution.',
+        'Selective phosphate VAP and beneficiation/recovery programs plus GBM exploration/LOM extension align best with diagnostic upside without repeating commodity-heavy mix; smelter expansion stays secondary to rolling/VAP and energy resilience unless margin structure is locked.',
       reasoning: [
-        'Options evaluated against hurdle rates and strategic fit scores in portfolioItems and strategicOptions.',
+        'Options evaluated against hurdle rates and strategic fit scores in portfolioItems and strategicOptions (2021 diagnostic option set).',
       ],
       confidence: 0.73,
       sources: ['capital_iq', 'woodmac', 'erp'],
@@ -197,8 +197,8 @@ export const aiPresets: AiPreset[] = [
     routeTags: ['cost'],
     response: {
       summary:
-        'Prioritized levers: reagent intensity (WAS), power contracting (smelter), G&A ratio (corporate), reliability program (GBM). Each lever is tracked with value-at-stake and SteerCo owners.',
-      reasoning: ['actions table synced to CSIC prioritization workshop notes (illustrative).'],
+        'Prioritized levers echo the diagnostic stack: phosphate ROM→acid recovery and reagent discipline (WAS/Ras), aluminum power and rolling/VAP realization (smelter/refinery), gold mill reliability and PM compliance (GBM), corporate G&A productivity. Each has value-at-stake and SteerCo owners.',
+      reasoning: ['actions table synced to CSIC-style prioritization; stakes aligned to 2021 benchmarking themes (illustrative).'],
       confidence: 0.8,
       sources: ['erp'],
       lineage: ['costLevers', 'actions'],

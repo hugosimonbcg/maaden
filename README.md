@@ -1,6 +1,6 @@
 # Maaden Benchmark Intelligence (prototype)
 
-High-fidelity desktop prototype for the AI-enabled strategic benchmarking platform: one shell, four benchmark outcomes, shared synthetic fact base, URL-synced filters, and a structured AI insight drawer.
+High-fidelity desktop prototype for the AI-enabled strategic benchmarking platform: one shell, four benchmark outcomes, shared fact base **calibrated to themes and orders of magnitude from Ma’aden’s 2021 full business diagnostic (2020 data anchor)** — still illustrative for UI/AI dialogue, not a live ERP extract — URL-synced filters, and a structured AI insight drawer.
 
 ## Run
 
@@ -73,4 +73,4 @@ Use a normal browser tab at `http://localhost:5173/cost` (or the URL printed by 
 
 ---
 
-*Illustrative only — data is synthetic and not Maaden confidential information.*
+*Illustrative prototype: seeded metrics echo the 2021 benchmarking storyline; not a substitute for governed management data or confidential client materials.*

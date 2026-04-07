@@ -24,7 +24,7 @@ export const sourceFreshness: SourceFreshness[] = [
   },
   {
     source: 'capital_iq',
-    label: 'S&P Capital IQ',
+    label: 'S&P Capital IQ + 2021 diagnostic peer pack (2020 anchor)',
     kind: 'external',
     lastRefresh: '2026-03-16T09:30:00Z',
     status: 'partial',
