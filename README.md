@@ -31,6 +31,23 @@ Root **`middleware.ts`** enforces [HTTP Basic Auth](https://developer.mozilla.or
 
 `npm run dev` does **not** run Vercel middleware. To test auth locally, use [`vercel dev`](https://vercel.com/docs/cli/dev) with the same variables in `.env` / linked project.
 
+When Basic Auth is enabled, the browser sends the same credentials on `fetch('/api/ai', …)` (same origin), so the AI API route stays protected without extra client code.
+
+### Vercel: AI narrative (Groq, optional)
+
+The **Run analysis** query bar calls **`POST /api/ai`** (Edge Function in [`api/ai.ts`](api/ai.ts)). It matches your question to a seeded preset, then asks an **open-weight** model (default **Llama 3.2 1B** via [Groq](https://console.groq.com/)) to rewrite only **summary** and **reasoning** as JSON. **Sources, lineage, confidence, and follow-ups** always come from the prototype seed.
+
+| Variable | Description |
+| --- | --- |
+| `GROQ_API_KEY` | Groq API key (server-only; never `VITE_*`) |
+| `AI_API_KEY` | Optional fallback if `GROQ_API_KEY` is unset |
+| `AI_MODEL` | Optional; default `llama-3.1-8b-instant` (Groq production list) |
+| `AI_BASE_URL` | Optional OpenAI-compatible base (default Groq `https://api.groq.com/openai/v1`) |
+
+**Setup:** create a Groq account → API keys → add `GROQ_API_KEY` in Vercel → **Redeploy**.
+
+**Local:** `npm run dev` does not serve `/api/*`. Use **`vercel dev`** from the repo root (with env vars in `.env` or linked project) to exercise the full stack. If the API is missing or the key is absent, the UI falls back to the **preset narrative** (drawer footer explains this).
+
 ### Vercel: other environment variables
 
 For values the **React app** must read in the browser, use the **`VITE_`** prefix (for example `VITE_PUBLIC_API_URL`); Vite inlines them at **build** time. Never put real secrets in `VITE_*` — they appear in client JavaScript.
@@ -57,4 +74,3 @@ Use a normal browser tab at `http://localhost:5173/cost` (or the URL printed by 
 ---
 
 *Illustrative only — data is synthetic and not Maaden confidential information.*
-# maaden

@@ -153,6 +153,10 @@ export interface AiPreset {
   id: string
   prompt: string
   routeTags: Array<'cost' | 'operations' | 'portfolio' | 'strategy'>
+  /** How summary/reasoning were produced (UI disclosure). */
+  narrativeSource?: 'groq' | 'preset'
+  /** OpenAI-compatible model id when narrativeSource is groq (e.g. llama-3.2-1b-preview). */
+  narrativeModelId?: string
   response: {
     summary: string
     reasoning: string[]

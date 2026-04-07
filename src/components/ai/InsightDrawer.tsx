@@ -108,6 +108,19 @@ export function InsightDrawer() {
             </button>
           ))}
         </div>
+        <p className="mt-8 border-t border-[color:var(--ai-edge)] pt-4 text-[11px] leading-relaxed text-[color:var(--ai-text-muted)]">
+          {aiActivePreset.narrativeSource === 'groq' ? (
+            <>
+              Narrative: open-weight model (Groq
+              {aiActivePreset.narrativeModelId ? ` · ${aiActivePreset.narrativeModelId}` : ''}). Sources,
+              confidence, and follow-ups: prototype seed.
+            </>
+          ) : aiActivePreset.narrativeSource === 'preset' ? (
+            <>Offline / preset narrative — no live model call. Sources and structure: prototype seed.</>
+          ) : (
+            <>Preset narrative · prototype seed.</>
+          )}
+        </p>
       </div>
     </aside>
   )

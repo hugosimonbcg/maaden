@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useLocation } from 'react-router-dom'
+import { fetchAiEnrichedPreset } from '../../lib/aiClient'
 import { matchPresetFromQuery } from '../../lib/aiMatch'
 import { useShellStore } from '../../store/shellStore'
 import { AiBarMeter } from './AiBarMeter'
@@ -35,14 +36,23 @@ export function QueryBar() {
   const aiPhase = useShellStore((s) => s.aiPhase)
   const drawerOpen = useShellStore((s) => s.aiDrawerOpen)
 
-  const submit = () => {
+  const submit = async () => {
     const trimmed = q.trim()
     if (!trimmed) return
+    if (useShellStore.getState().aiPhase === 'thinking') return
     setAiPhase('thinking')
-    window.setTimeout(() => {
-      const preset = matchPresetFromQuery(trimmed, routeTag(pathname))
-      openAiPreset({ ...preset, prompt: trimmed })
-    }, 200)
+    const tag = routeTag(pathname)
+    const matched = matchPresetFromQuery(trimmed, tag)
+    const res = await fetchAiEnrichedPreset({
+      prompt: trimmed,
+      routeTag: tag,
+      presetId: matched.id,
+    })
+    if (res.ok) {
+      openAiPreset(res.preset)
+    } else {
+      openAiPreset({ ...matched, prompt: trimmed, narrativeSource: 'preset' })
+    }
   }
 
   return (
@@ -65,7 +75,9 @@ export function QueryBar() {
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && submit()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') void submit()
+              }}
               onFocus={() => {
                 const s = useShellStore.getState()
                 if (s.aiPhase === 'idle') s.setAiPhase('listening')
@@ -82,7 +94,7 @@ export function QueryBar() {
               className="h-11 w-full rounded-sm border border-[color:var(--ai-edge)] bg-[color:var(--ai-panel-elevated)] px-4 text-[14px] text-[color:var(--ai-text)] placeholder:text-[color:var(--ai-text-muted)] focus:border-[color:var(--ai-accent)] focus:outline-none focus:ring-1 focus:ring-[color:var(--ai-accent)]"
             />
             <AiButton
-              onClick={submit}
+              onClick={() => void submit()}
               showMeter={!drawerOpen}
               className="h-11 shrink-0 px-5 sm:min-w-[140px]"
             >
