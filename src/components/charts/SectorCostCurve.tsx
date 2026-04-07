@@ -11,6 +11,9 @@ type Props = {
   benchmarkUsdPerTon?: number | null
   benchmarkLabel?: string
   onMaadenClick?: (segment: SectorCostCurveSegment) => void
+  /** When set with `onCompanyFilterChange`, filter state lives in the parent (e.g. Card header). */
+  companyFilter?: string | null
+  onCompanyFilterChange?: (value: string | null) => void
 }
 
 const LEGEND: { region: SectorCostCurveSegment['region']; label: string }[] = [
@@ -27,13 +30,18 @@ export function SectorCostCurve({
   benchmarkUsdPerTon,
   benchmarkLabel,
   onMaadenClick,
+  companyFilter: companyFilterProp,
+  onCompanyFilterChange,
 }: Props) {
   const gid = useId()
   const containerRef = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState(720)
   const [hovered, setHovered] = useState<SectorCostCurveSegment | null>(null)
   const [tipPos, setTipPos] = useState({ x: 0, y: 0 })
-  const [selectedCompany, setSelectedCompany] = useState<string | null>(null)
+  const [internalCompanyFilter, setInternalCompanyFilter] = useState<string | null>(null)
+  const filterControlled = typeof onCompanyFilterChange === 'function'
+  const selectedCompany = filterControlled ? (companyFilterProp ?? null) : internalCompanyFilter
+  const setSelectedCompany = filterControlled ? onCompanyFilterChange! : setInternalCompanyFilter
 
   useEffect(() => {
     const el = containerRef.current
@@ -50,9 +58,15 @@ export function SectorCostCurve({
   const height = 380
   const iw = width - margin.left - margin.right
   const ih = height - margin.top - margin.bottom
-  const { segments, totalCapacityMt, maxCost, unit, xLabel, companyNames, phosphateSource } = model
+  const { segments, totalCapacityMt, maxCost, unit, xLabel, companyNames, phosphateSource, aluminumSource } =
+    model
   const isDapSites = phosphateSource === 'dap_sites'
-  const costMetricLabel = isDapSites ? 'DAP site cost' : 'C1 cash cost'
+  const isAlSmelterDelivered = aluminumSource === 'smelter_delivered'
+  const costMetricLabel = isDapSites
+    ? 'DAP site cost'
+    : isAlSmelterDelivered
+      ? 'Delivered cost'
+      : 'C1 cash cost'
 
   const isCompanyEmphasized = (s: SectorCostCurveSegment) =>
     !selectedCompany || (s.company != null && s.company === selectedCompany)
@@ -102,7 +116,7 @@ export function SectorCostCurve({
 
   return (
     <div ref={containerRef} className="relative w-full">
-      {companyNames && companyNames.length > 0 && (
+      {companyNames && companyNames.length > 0 && !filterControlled && (
         <div className="mb-3 flex flex-wrap items-end justify-end gap-3">
           <label className="flex flex-col gap-1 text-[10px] font-semibold uppercase tracking-wide text-ma-muted">
             Company

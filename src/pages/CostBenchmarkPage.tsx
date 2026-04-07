@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { DapMinusWaterfall } from '../components/charts/DapMinusWaterfall'
 import { SectorCostCurve } from '../components/charts/SectorCostCurve'
 import { Card } from '../components/ui/Card'
@@ -29,8 +29,13 @@ export function CostBenchmarkPage() {
   const [drillTitle, setDrillTitle] = useState<string | null>(null)
   const [scenarioIdx, setScenarioIdx] = useState(1)
   const [dapMinusCompany, setDapMinusCompany] = useState<string | null>(null)
+  const [sectorCurveCompanyFilter, setSectorCurveCompanyFilter] = useState<string | null>(null)
 
   const dapMinusCompanyOptions = useMemo(() => uniqueSortedCompanies(getPhosphateDapSiteRows()), [])
+
+  useEffect(() => {
+    setSectorCurveCompanyFilter(null)
+  }, [f.vertical])
 
   const primary = rows[0]
   const avgQuartile = useMemo(() => {
@@ -60,6 +65,26 @@ export function CostBenchmarkPage() {
   }, [rows, f.cohort])
 
   const sectorCurve = useMemo(() => buildSectorCostCurve(f.vertical, f.year, rows), [f.vertical, f.year, rows])
+
+  /** Site / smelter curves use chart $/t; legacy benchmark rows may use a different C1 basis — align hero with the chart. */
+  const costPositionUsdPerTon = useMemo(() => {
+    const fromCurveMaadenAvg = (): number | null => {
+      if (!sectorCurve) return null
+      const isSiteCurve =
+        sectorCurve.phosphateSource === 'dap_sites' || sectorCurve.aluminumSource === 'smelter_delivered'
+      if (!isSiteCurve) return null
+      let maadenSegs = sectorCurve.segments.filter((s) => s.isMaaden && s.c1UsdPerTon > 0)
+      if (f.asset !== 'all') {
+        maadenSegs = maadenSegs.filter((s) => s.assetId === f.asset)
+      }
+      if (!maadenSegs.length) return null
+      const mean = maadenSegs.reduce((sum, s) => sum + s.c1UsdPerTon, 0) / maadenSegs.length
+      return Math.round(mean * 1000) / 1000
+    }
+    const curveAvg = fromCurveMaadenAvg()
+    if (curveAvg != null) return curveAvg
+    return primary && primary.c1UsdPerTon > 0 ? primary.c1UsdPerTon : null
+  }, [sectorCurve, primary, f.asset])
 
   const cohortBenchmarkUsd =
     primary && primary.c1UsdPerTon > 0 && f.cohort !== 'maaden'
@@ -161,11 +186,15 @@ export function CostBenchmarkPage() {
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-wide text-ma-muted">Cost position</p>
               <p className="mt-2 text-[28px] font-semibold tabular-nums text-ma-ink">
-                {primary && primary.c1UsdPerTon > 0 ? formatUsdPerTon(primary.c1UsdPerTon) : 'G&A view'}
+                {costPositionUsdPerTon != null ? formatUsdPerTon(costPositionUsdPerTon) : 'G&A view'}
               </p>
               <p className="mt-1 text-[13px] text-ma-muted">
-                {primary && primary.c1UsdPerTon > 0
-                  ? `Versus ${peerTierLabel(f.cohort)} on C1 cash cost — ${f.year}`
+                {costPositionUsdPerTon != null
+                  ? sectorCurve?.phosphateSource === 'dap_sites'
+                    ? `Versus ${peerTierLabel(f.cohort)} on DAP site cost — ${f.year}`
+                    : sectorCurve?.aluminumSource === 'smelter_delivered'
+                      ? `Versus ${peerTierLabel(f.cohort)} on delivered smelter cost — ${f.year}`
+                      : `Versus ${peerTierLabel(f.cohort)} on C1 cash cost — ${f.year}`
                   : `Overhead ratio ${formatPct((primary?.overheadRatio ?? 0) * 100, 2)} — ${f.year}`}
               </p>
             </div>
@@ -222,14 +251,38 @@ export function CostBenchmarkPage() {
         title={
           sectorCurve?.phosphateSource === 'dap_sites'
             ? 'Sector cost curve — DAP site cost'
-            : 'Sector cost curve — C1 cash cost'
+            : sectorCurve?.aluminumSource === 'smelter_delivered'
+              ? 'Sector cost curve — delivered smelter cost'
+              : 'Sector cost curve — C1 cash cost'
         }
         subtitle={
           sectorCurve
             ? sectorCurve.phosphateSource === 'dap_sites'
               ? `${sectorCurve.verticalLabel} · Site-level CRU-style pack: bars low-cost → high-cost; bar width ∝ DAP capacity (Mt/yr); height ∝ DAP site cost (US$/t). MPC / MWSPC highlighted. Red dashed = merit-order envelope; amber line = ${peerTierLabel(f.cohort)} reference from the primary filtered portfolio row (may differ in basis from DAP site cost).`
-              : `${sectorCurve.verticalLabel} · bars ordered low-cost → high-cost; width ∝ illustrative capacity, height ∝ unit C1. Maaden assets highlighted. Red dashed = merit-order envelope; amber line = ${peerTierLabel(f.cohort)} reference for the primary filtered row. External actors are synthetic for prototype narrative.`
+              : sectorCurve.aluminumSource === 'smelter_delivered'
+                ? `${sectorCurve.verticalLabel} · Smelter-level delivered cost ($/t Al), 2025 house view: bars low-cost → high-cost; width ∝ primary Al capacity (Mt/yr). Maaden Ras Al Khair highlighted. Red dashed = merit-order envelope; amber line = ${peerTierLabel(f.cohort)} from portfolio benchmarks (aligned to delivered-cost scale).`
+                : `${sectorCurve.verticalLabel} · bars ordered low-cost → high-cost; width ∝ illustrative capacity, height ∝ unit C1. Maaden assets highlighted. Red dashed = merit-order envelope; amber line = ${peerTierLabel(f.cohort)} reference for the primary filtered row. External actors are synthetic for prototype narrative.`
             : 'Select an operating vertical to view a sector merit-order curve.'
+        }
+        action={
+          sectorCurve?.companyNames?.length ? (
+            <label className="flex shrink-0 flex-col items-end gap-1 text-[10px] font-semibold uppercase tracking-wide text-ma-muted">
+              Company
+              <select
+                className="h-9 min-w-[200px] max-w-[min(100%,280px)] rounded-sm border border-ma-line bg-ma-elevated px-2 text-[13px] font-medium text-ma-ink"
+                value={sectorCurveCompanyFilter ?? ''}
+                aria-label="Sector cost curve company highlight"
+                onChange={(e) => setSectorCurveCompanyFilter(e.target.value === '' ? null : e.target.value)}
+              >
+                <option value="">All companies</option>
+                {sectorCurve.companyNames.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : undefined
         }
       >
         {!sectorCurve ? (
@@ -240,11 +293,15 @@ export function CostBenchmarkPage() {
         ) : (
           <div className="w-full min-w-0">
             <SectorCostCurve
-              key={`${f.vertical}-${sectorCurve.phosphateSource ?? 'na'}-${sectorCurve.segments.length}`}
+              key={`${f.vertical}-${sectorCurve.phosphateSource ?? sectorCurve.aluminumSource ?? 'na'}-${sectorCurve.segments.length}`}
               model={sectorCurve}
               benchmarkUsdPerTon={cohortBenchmarkUsd}
               benchmarkLabel={
                 cohortBenchmarkUsd != null ? `${peerTierLabel(f.cohort)} ref. (${f.year})` : undefined
+              }
+              companyFilter={sectorCurve.companyNames?.length ? sectorCurveCompanyFilter : undefined}
+              onCompanyFilterChange={
+                sectorCurve.companyNames?.length ? setSectorCurveCompanyFilter : undefined
               }
               onMaadenClick={(s) => {
                 if (s.fullName) setDrillTitle(s.fullName)

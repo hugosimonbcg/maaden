@@ -27,7 +27,8 @@ function peerC1Ladder(
 ): { peer_median: number; top_quartile: number; best_in_world: number } {
   switch (assetId) {
     case 'al_smelter':
-      return { peer_median: 1590, top_quartile: 1410, best_in_world: 1220 }
+      /* Delivered $/t Al scale for sector smelter curve & benchmark banding (house view ~2025). */
+      return { peer_median: 2280, top_quartile: 2130, best_in_world: 1860 }
     case 'al_refining':
       return { peer_median: 332, top_quartile: 292, best_in_world: 262 }
     case 'ph_waad':

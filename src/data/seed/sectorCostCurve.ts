@@ -1,5 +1,6 @@
 import type { CostBenchmarkRow, VerticalId, YearKey } from '../types'
 import { assets } from './assets'
+import { buildAluminumSmelterDeliveredCurve } from './aluminumSmelterCurve'
 import {
   countryToSectorRegion,
   getPhosphateDapSiteRows,
@@ -7,6 +8,9 @@ import {
   maadenPhosphateAssetId,
   uniqueSortedCompanies,
 } from './phosphateDapCurve'
+import type { SectorCostCurveModel, SectorCostCurveSegment, SectorRegion } from './sectorCurveModel'
+
+export type { SectorCostCurveModel, SectorCostCurveSegment, SectorRegion } from './sectorCurveModel'
 
 function yearFactor(y: YearKey): number {
   if (y === 2021) return 0.96
@@ -14,33 +18,6 @@ function yearFactor(y: YearKey): number {
   if (y === 2024) return 1.0
   if (y === 2025) return 0.98
   return 0.92
-}
-
-export type SectorRegion = 'cis' | 'china' | 'americas' | 'mena' | 'row' | 'maaden'
-
-export interface SectorCostCurveSegment {
-  id: string
-  label: string
-  fullName: string
-  region: SectorRegion
-  capacityMt: number
-  c1UsdPerTon: number
-  /** Portfolio C1 when chart position is capped for scale (Maaden only). */
-  c1UsdPerTonReported?: number
-  cumStartMt: number
-  isMaaden: boolean
-  assetId?: string
-  fill: string
-  stroke: string
-  strokeWidth: number
-  /** DAP site curve (CRU-style pack). */
-  company?: string
-  country?: string
-  site?: string
-  dapConversionUsdPerTon?: number
-  dapNUsdPerTon?: number
-  dapPUsdPerTon?: number
-  dapSUsdPerTon?: number
 }
 
 const regionStyle: Record<
@@ -104,6 +81,22 @@ const phosphateSeeds: Seed[] = [
 ]
 
 const aluminumSeeds: Seed[] = [
+  {
+    id: 'a_nordic_q1',
+    label: 'Nordic — Q1 hydro',
+    fullName: 'EU — Iceland / Norway low-carbon smelters (benchmark band)',
+    region: 'row',
+    capacityMt: 1.1,
+    c1Ref: 1320,
+  },
+  {
+    id: 'a_gcc_eff',
+    label: 'GCC — efficient',
+    fullName: 'GCC — best quartile ex-KSA integrated power (illustrative)',
+    region: 'mena',
+    capacityMt: 1.5,
+    c1Ref: 1450,
+  },
   { id: 'a_rus', label: 'Russia — smelters', fullName: 'Russia — primary aluminum', region: 'cis', capacityMt: 3.8, c1Ref: 1820 },
   { id: 'a_cn', label: 'China — grid', fullName: 'China — coal-linked smelters', region: 'china', capacityMt: 42, c1Ref: 1980 },
   { id: 'a_gcc', label: 'GCC — ex-KSA', fullName: 'GCC — other smelters', region: 'mena', capacityMt: 2.4, c1Ref: 1880 },
@@ -131,18 +124,6 @@ function seedsForVertical(v: VerticalId): Seed[] | null {
   if (v === 'aluminum') return aluminumSeeds
   if (v === 'gold_base_metals') return goldSeeds
   return null
-}
-
-export interface SectorCostCurveModel {
-  segments: SectorCostCurveSegment[]
-  totalCapacityMt: number
-  maxCost: number
-  unit: string
-  xLabel: string
-  verticalLabel: string
-  /** Phosphate DAP site table — distinct companies for UI filter. */
-  companyNames?: string[]
-  phosphateSource?: 'dap_sites' | 'synthetic'
 }
 
 function slugPart(s: string): string {
@@ -224,6 +205,11 @@ export function buildSectorCostCurve(
     if (dap) return dap
   }
 
+  if (vertical === 'aluminum') {
+    const al = buildAluminumSmelterDeliveredCurve()
+    if (al) return al
+  }
+
   const vf = vertical
   const seeds = seedsForVertical(vf)
   if (!seeds) return null
@@ -247,8 +233,15 @@ export function buildSectorCostCurve(
   })
 
   const extMaxC1 = Math.max(...external.map((e) => e.c1UsdPerTon), 1)
-  /** Keep Maaden on the chart when portfolio C1 is far above the global merit band (hero / scenario). */
-  const maadenCurveCap = Math.min(125, Math.round(extMaxC1 * 1.16 + 8))
+  /**
+   * Clip portfolio C1 for bar height only when it sits far above the synthetic merit band.
+   * The hard 125 cap applies to legacy phosphate $/t scale only — aluminum/gold use $/t metal
+   * in the hundreds–thousands; Math.min(125, …) there forced Maaden bars to ~$125 (flat on axis).
+   */
+  const maadenCurveCap =
+    vf === 'aluminum' || vf === 'gold_base_metals'
+      ? Math.round(extMaxC1 * 1.32 + 100)
+      : Math.min(125, Math.round(extMaxC1 * 1.16 + 8))
 
   const maadenRows = rows.filter((r) => {
     const a = assets.find((x) => x.id === r.assetId)
@@ -310,5 +303,6 @@ export function buildSectorCostCurve(
     xLabel,
     verticalLabel,
     phosphateSource: 'synthetic',
+    aluminumSource: vf === 'aluminum' ? 'synthetic' : undefined,
   }
 }
